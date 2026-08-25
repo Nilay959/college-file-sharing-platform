@@ -1,0 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Work Sans', system-ui, sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+*:hover {
+  scrollbar-color: #d1d5db transparent;
+}
+
+:root {
+  --background: #f8f9fb;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f2f6;
+  --secondary-foreground: #374151;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --accent: #eef2ff;
+  --accent-foreground: #4f46e5;
+  --border: #e5e7eb;
+  --ring: #4f46e5;
+  --radius: 6px;
+}
