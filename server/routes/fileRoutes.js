@@ -12,7 +12,7 @@ mongoose.connection.once('open', () => {
   });
 });
 
-const hasSpaceAccess = (userSpaces, spaceId) => userSpaces.includes(spaceId);
+const hasSpaceAccess = (userSpaces, spaceId) => (userSpaces || []).includes(spaceId);
 
 const formatSize = (bytes) => {
   if (bytes === 0) return '0 Bytes';

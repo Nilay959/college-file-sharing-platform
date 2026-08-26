@@ -66,6 +66,31 @@ router.get('/users', async (req, res) => {
   try { res.json(await User.find({ role: 'student' }).select('-password').sort({ createdAt: -1 })); }
   catch (error) { res.status(500).json({ error: error.message }); }
 });
+router.delete('/users/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    // 1. Find all files uploaded by this user
+    const userFiles = await File.find({ uploaderId: userId });
+    
+    // 2. Delete all those files from GridFS and MongoDB
+    for (const file of userFiles) {
+      if (gfsBucket) {
+        const gfsFiles = await gfsBucket.find({ filename: file.storageKey }).toArray();
+        if (gfsFiles.length > 0) {
+          await gfsBucket.delete(gfsFiles[0]._id);
+        }
+      }
+      await File.findByIdAndDelete(file._id);
+    }
+    
+    // 3. Delete the user
+    await User.findByIdAndDelete(userId);
+    
+    res.json({ success: true, deletedFilesCount: userFiles.length });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
 router.put('/users/:id/status', async (req, res) => {
   try { res.json(await User.findByIdAndUpdate(req.params.id, { isActive: req.body.isActive }, { new: true })); }
   catch (error) { res.status(400).json({ error: error.message }); }

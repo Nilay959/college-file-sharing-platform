@@ -315,6 +315,11 @@ function UsersView() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["adminUsers"] }); queryClient.invalidateQueries({ queryKey: ["adminStats"] }); }
   });
 
+  const deleteMut = useMutation({
+    mutationFn: api.deleteUser,
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["adminUsers"] }); queryClient.invalidateQueries({ queryKey: ["adminStats"] }); }
+  });
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Students</h2>
@@ -336,9 +341,12 @@ function UsersView() {
                 <td className="p-4">
                   <span className={`px-2 py-1 rounded text-xs ${u.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{u.isActive ? 'Active' : 'Disabled'}</span>
                 </td>
-                <td className="p-4">
+                <td className="p-4 flex gap-4">
                   <button onClick={() => mutation.mutate({ id: u._id, isActive: !u.isActive })} className="text-indigo-600 hover:underline font-medium text-xs">
                     {u.isActive ? 'Disable' : 'Activate'}
+                  </button>
+                  <button onClick={() => { if(window.confirm('Are you sure you want to delete this user?')) deleteMut.mutate(u._id); }} className="text-red-600 hover:underline font-medium text-xs">
+                    Delete
                   </button>
                 </td>
               </tr>

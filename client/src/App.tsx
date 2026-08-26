@@ -86,8 +86,27 @@ function RegisterPage({ onBack, onDone }: any) {
   
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
+  const [timer, setTimer] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    let interval: any;
+    if (otpSent && timer > 0) {
+      interval = setInterval(() => setTimer(t => t - 1), 1000);
+    }
+    return () => clearInterval(interval);
+  }, [otpSent, timer]);
+
+  const handleResendOtp = async () => {
+    try {
+      setError("");
+      await api.sendOtp(email);
+      setTimer(30);
+    } catch (e: any) {
+      setError(e.message);
+    }
+  };
 
   const { data: hierarchy = [] } = useQuery({ queryKey: ['hierarchy'], queryFn: api.getHierarchy });
 
@@ -106,6 +125,7 @@ function RegisterPage({ onBack, onDone }: any) {
       if (!otpSent) {
         await api.sendOtp(email);
         setOtpSent(true);
+        setTimer(30);
       } else {
         if (!otp || otp.length !== 6) throw new Error("Please enter a valid 6-digit OTP");
         const data = await api.register({ name, email, password, rollNo, department, semester, division, batch, otp });
@@ -137,7 +157,12 @@ function RegisterPage({ onBack, onDone }: any) {
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Enter 6-Digit OTP</label>
               <input type="text" placeholder="123456" maxLength={6} value={otp} onChange={e => setOtp(e.target.value)} className="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-sm outline-none focus:border-indigo-500 transition shadow-sm text-center tracking-[0.5em] text-lg font-bold" />
-              <p className="text-xs text-gray-400 mt-2 text-center">We sent a verification code to {email}</p>
+              <div className="flex items-center justify-between mt-2 px-1">
+                <p className="text-xs text-gray-400">Code sent to {email}</p>
+                <button type="button" onClick={handleResendOtp} disabled={timer > 0} className="text-xs font-semibold text-indigo-600 hover:underline disabled:text-gray-400 disabled:no-underline transition">
+                  {timer > 0 ? Resend in s : 'Resend OTP'}
+                </button>
+              </div>
             </div>
           </div>
         )}

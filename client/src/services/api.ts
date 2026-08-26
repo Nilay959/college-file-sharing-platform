@@ -69,6 +69,11 @@ export const api = {
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
+  deleteUser: async (id: string) => {
+    const res = await fetch(`${API_URL}/admin/users/${id}`, { method: 'DELETE', headers: getHeaders() });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
   updateUserStatus: async (id: string, isActive: boolean) => {
     const res = await fetch(`${API_URL}/admin/users/${id}/status`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify({ isActive }) });
     if (!res.ok) throw new Error(await res.text());
