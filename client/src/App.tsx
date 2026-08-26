@@ -84,6 +84,8 @@ function RegisterPage({ onBack, onDone }: any) {
   const [division, setDivision] = useState("");
   const [batch, setBatch] = useState("");
   
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -101,11 +103,17 @@ function RegisterPage({ onBack, onDone }: any) {
     try {
       setLoading(true);
       setError("");
-      const data = await api.register({ name, email, password, rollNo, department, semester, division, batch });
-      setAuthToken(data.token);
-      setUserInfo(data.user);
-      onDone();
-    } catch (e: any) { setError("Registration failed: " + e.message); }
+      if (!otpSent) {
+        await api.sendOtp(email);
+        setOtpSent(true);
+      } else {
+        if (!otp || otp.length !== 6) throw new Error("Please enter a valid 6-digit OTP");
+        const data = await api.register({ name, email, password, rollNo, department, semester, division, batch, otp });
+        setAuthToken(data.token);
+        setUserInfo(data.user);
+        onDone();
+      }
+    } catch (e: any) { setError(e.message); }
     finally { setLoading(false); }
   };
 
@@ -124,7 +132,16 @@ function RegisterPage({ onBack, onDone }: any) {
         
         {error && <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-md text-sm font-medium">{error}</div>}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {otpSent && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Enter 6-Digit OTP</label>
+              <input type="text" placeholder="123456" maxLength={6} value={otp} onChange={e => setOtp(e.target.value)} className="w-full px-3 py-2.5 border border-gray-200 rounded-lg bg-white text-sm outline-none focus:border-indigo-500 transition shadow-sm text-center tracking-[0.5em] text-lg font-bold" />
+              <p className="text-xs text-gray-400 mt-2 text-center">We sent a verification code to {email}</p>
+            </div>
+          </div>
+        )}
+        <div className={otpSent ? "hidden" : "grid grid-cols-1 md:grid-cols-2 gap-6"}>
           <div className="space-y-4">
             <h3 className="text-sm font-bold text-gray-700 border-b pb-2">Basic Information</h3>
             <div className="space-y-1.5">

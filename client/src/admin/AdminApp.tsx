@@ -236,7 +236,7 @@ function SubjectView() {
   const delMut = useMutation({
     mutationFn: api.deleteSubject,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["adminSubjects"] });
+      queryClient.invalidateQueries({ queryKey: ["adminSubjects"] }); queryClient.invalidateQueries({ queryKey: ["subjects"] });
       queryClient.invalidateQueries({ queryKey: ["adminStats"] });
     }
   });
@@ -244,7 +244,7 @@ function SubjectView() {
   const mutation = useMutation({
     mutationFn: api.createSubject,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["adminSubjects"] });
+      queryClient.invalidateQueries({ queryKey: ["adminSubjects"] }); queryClient.invalidateQueries({ queryKey: ["subjects"] });
       queryClient.invalidateQueries({ queryKey: ["adminStats"] });
       setName(""); setCode(""); setShortName(""); setDepartmentId(""); setSemesterId("");
       alert("Subject added successfully");
@@ -305,7 +305,7 @@ function UsersView() {
   const delMut = useMutation({
     mutationFn: api.deleteSubject,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["adminSubjects"] });
+      queryClient.invalidateQueries({ queryKey: ["adminSubjects"] }); queryClient.invalidateQueries({ queryKey: ["subjects"] });
       queryClient.invalidateQueries({ queryKey: ["adminStats"] });
     }
   });
@@ -359,15 +359,18 @@ function FilesView() {
   const delMut = useMutation({
     mutationFn: api.deleteSubject,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["adminSubjects"] });
+      queryClient.invalidateQueries({ queryKey: ["adminSubjects"] }); queryClient.invalidateQueries({ queryKey: ["subjects"] });
       queryClient.invalidateQueries({ queryKey: ["adminStats"] });
     }
   });
 
   const mutation = useMutation({
     mutationFn: api.deleteFileAdmin,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["adminFiles"] });
+    onSuccess: (_, deletedId) => {
+      // Instantly update cache without page reload or refetch
+      queryClient.setQueryData(["adminFiles"], (old: any) => old ? old.filter((f: any) => f._id !== deletedId) : []);
+      // Invalidate student caches in the background
+      queryClient.invalidateQueries({ queryKey: ["files"] });
       queryClient.invalidateQueries({ queryKey: ["adminStats"] });
       setDeleteId("");
     }

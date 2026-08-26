@@ -1,11 +1,19 @@
 ﻿const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const User = require('../models/User');
 const Hierarchy = require('../models/Hierarchy');
 const Subject = require('../models/Subject');
 const EmailDomain = require('../models/EmailDomain');
 const File = require('../models/File');
+
+let gfsBucket;
+mongoose.connection.once('open', () => {
+  gfsBucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
+    bucketName: 'uploads'
+  });
+});
 
 router.use(requireAuth, requireAdmin);
 
@@ -23,23 +31,16 @@ router.get('/dashboard', async (req, res) => {
 
 // Hierarchy Management
 router.post('/hierarchy', async (req, res) => {
-  try {
-    const item = await Hierarchy.create(req.body);
-    res.status(201).json(item);
-  } catch (error) { res.status(400).json({ error: error.message }); }
+  try { res.status(201).json(await Hierarchy.create(req.body)); }
+  catch (error) { res.status(400).json({ error: error.message }); }
 });
 router.delete('/hierarchy/:id', async (req, res) => {
-  try {
-    await Hierarchy.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
-  } catch (error) { res.status(400).json({ error: error.message }); }
+  try { await Hierarchy.findByIdAndDelete(req.params.id); res.json({ success: true }); }
+  catch (error) { res.status(400).json({ error: error.message }); }
 });
-
 router.put('/hierarchy/:id', async (req, res) => {
-  try {
-    const item = await Hierarchy.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(item);
-  } catch (error) { res.status(400).json({ error: error.message }); }
+  try { res.json(await Hierarchy.findByIdAndUpdate(req.params.id, req.body, { new: true })); }
+  catch (error) { res.status(400).json({ error: error.message }); }
 });
 
 // Subject Management
@@ -76,8 +77,21 @@ router.get('/files', async (req, res) => {
   catch (error) { res.status(500).json({ error: error.message }); }
 });
 router.delete('/files/:id', async (req, res) => {
-  try { await File.findByIdAndDelete(req.params.id); res.json({ success: true }); }
-  catch (error) { res.status(400).json({ error: error.message }); }
+  try {
+    const file = await File.findById(req.params.id);
+    if (!file) return res.status(404).json({ message: 'File not found' });
+    
+    // Attempt to delete from GridFS
+    if (gfsBucket) {
+      const gfsFiles = await gfsBucket.find({ filename: file.storageKey }).toArray();
+      if (gfsFiles.length > 0) {
+        await gfsBucket.delete(gfsFiles[0]._id);
+      }
+    }
+    
+    await File.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (error) { res.status(400).json({ error: error.message }); }
 });
 
 // Email Domains

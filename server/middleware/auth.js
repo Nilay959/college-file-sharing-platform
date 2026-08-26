@@ -2,7 +2,12 @@
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const requireAuth = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
+  // Check headers first, fallback to query string for file downloads
+  let token = req.headers.authorization?.split(' ')[1];
+  if (!token && req.query.token) {
+    token = req.query.token;
+  }
+  
   if (!token) return res.status(401).json({ message: 'Authentication required' });
   try {
     if (!JWT_SECRET) throw new Error("JWT_SECRET missing");

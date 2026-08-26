@@ -126,6 +126,15 @@ export const api = {
     if (!res.ok) throw new Error(await getError(res));
     return res.json();
   },
+  sendOtp: async (email: string) => {
+    const res = await fetch(`${API_URL}/auth/send-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    if (!res.ok) throw new Error((await res.json()).message);
+    return res.json();
+  },
   register: async (userData: any) => {
     const res = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
