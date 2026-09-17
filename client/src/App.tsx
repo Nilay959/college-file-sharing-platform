@@ -160,7 +160,7 @@ function RegisterPage({ onBack, onDone }: any) {
               <div className="flex items-center justify-between mt-2 px-1">
                 <p className="text-xs text-gray-400">Code sent to {email}</p>
                 <button type="button" onClick={handleResendOtp} disabled={timer > 0} className="text-xs font-semibold text-indigo-600 hover:underline disabled:text-gray-400 disabled:no-underline transition">
-                  {timer > 0 ? Resend in s : 'Resend OTP'}
+                  {timer > 0 ? `Resend in ${timer}s` : 'Resend OTP'}
                 </button>
               </div>
             </div>
