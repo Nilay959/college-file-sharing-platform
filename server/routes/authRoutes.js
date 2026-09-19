@@ -141,7 +141,7 @@ router.post('/login', async (req, res) => {
 
     res.json({
       token,
-      user: { id: user._id, name: user.name, role: user.role, spaces: getSpacesForUser(user), department: user.department, semester: user.semester, email: user.email }
+      user: { id: user._id, name: user.name, role: user.role, spaces: getSpacesForUser(user), department: user.department, semester: user.semester, division: user.division, batch: user.batch, email: user.email }
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -156,10 +156,12 @@ router.get('/me', async (req, res) => {
     const decoded = jwt.verify(token, JWT_SECRET);
     const user = await User.findById(decoded.id);
     if (!user || !user.isActive) return res.status(401).json({ message: 'User inactive' });
-    res.json({ name: user.name, email: user.email, role: user.role, spaces: getSpacesForUser(user), department: user.department, semester: user.semester });
+    res.json({ name: user.name, email: user.email, role: user.role, spaces: getSpacesForUser(user), department: user.department, semester: user.semester, division: user.division, batch: user.batch });
   } catch(e) {
     res.status(401).json({ message: 'Invalid token' });
   }
 });
 
 module.exports = router;
+
+
