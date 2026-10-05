@@ -387,6 +387,7 @@ function UserMenu({
   onProfile,
   onLogout,
   onClose,
+  onMyUploads,
 }: any) {
   const [themeOpen, setThemeOpen] = useState(false);
   return (
@@ -407,10 +408,10 @@ function UserMenu({
         <Icon name="user" size={14} />
         Profile
       </button>
-      <button disabled title="My Uploads requires a complete backend query">
-        <Icon name="clock" size={14} />
-        My Uploads
-      </button>
+      <button onClick={() => { onClose(); onMyUploads(); }}>
+          <Icon name="clock" size={14} />
+          My Uploads
+        </button>
       <button>
         <Icon name="settings" size={14} />
         Settings
@@ -438,13 +439,7 @@ function UserMenu({
     </div>
   );
 }
-function Header({
-  user,
-  theme,
-  setTheme,
-  onProfile,
-  onLogout,
-}: any) {
+function Header({ user, theme, setTheme, onProfile, onLogout, onMyUploads }: any) {
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -488,6 +483,7 @@ function Header({
             setTheme={setTheme}
             onProfile={onProfile}
             onLogout={onLogout}
+            onMyUploads={onMyUploads}
             onClose={() => setMenuOpen(false)}
           />
         )}
@@ -842,7 +838,7 @@ function Dashboard({ space, spaceLabel, subjects, onPreview }: any) {
   const debouncedQuery = useDebounce(query, 400);
   const { data: files = [], isLoading } = useQuery({
     queryKey: ["files", space, "all", debouncedQuery],
-    queryFn: () => api.getFiles(space, "all", debouncedQuery),
+    queryFn: () => space === "myuploads" ? api.getMyUploads() : api.getFiles(space, "all", debouncedQuery),
     enabled: Boolean(space),
   });
 
@@ -894,7 +890,7 @@ function Dashboard({ space, spaceLabel, subjects, onPreview }: any) {
           <div>
             <h1>{spaceLabel}</h1>
             <p>
-              Files shared with {spaceLabel === "E2" ? "E2 batch" : spaceLabel}
+              {space === "myuploads" ? "Manage all the files you have uploaded" : `Files shared with ${spaceLabel === "E2" ? "E2 batch" : spaceLabel}`}
             </p>
           </div>
           <button
@@ -1107,14 +1103,27 @@ function MainApp({ onLogout }: any) {
     const savedSpace = spaceStorageKey
       ? localStorage.getItem(spaceStorageKey)
       : null;
-    const nextSpace =
-      savedSpace && spaces.some((item: any) => item.id === savedSpace)
-        ? savedSpace
-        : spaces[0].id;
-    if (!space || !spaces.some((item: any) => item.id === space))
-      setSpace(nextSpace);
+    const path = window.location.pathname;
+    const initialSpace = path === "/myuploads" ? "myuploads" : savedSpace && spaces.some((item: any) => item.id === savedSpace) ? savedSpace : spaces[0].id;
+    const nextSpace = initialSpace;
+      if (!space || (space !== "myuploads" && !spaces.some((item: any) => item.id === space))) {
+        setSpace(nextSpace);
+      }
+
+      const handlePopState = () => {
+        const path = window.location.pathname;
+        if (path === "/myuploads") {
+          setSpace("myuploads");
+        } else {
+          const sSpace = spaceStorageKey ? localStorage.getItem(spaceStorageKey) : null;
+          setSpace(sSpace && spaces.some((item: any) => item.id === sSpace) ? sSpace : spaces[0]?.id);
+        }
+      };
+      window.addEventListener("popstate", handlePopState);
+      return () => window.removeEventListener("popstate", handlePopState);
   }, [space, spaceStorageKey, spaces]);
   const selectSpace = (nextSpace: string) => {
+    window.history.pushState({}, "", nextSpace === "myuploads" ? "/myuploads" : "/");
     setSpace(nextSpace);
     if (spaceStorageKey) localStorage.setItem(spaceStorageKey, nextSpace);
   };
@@ -1135,7 +1144,7 @@ function MainApp({ onLogout }: any) {
       ...allowed.map((item: any) => ({ id: item._id, label: item.shortName })),
     ];
   }, [publicSubjects, hierarchy, user]);
-  const currentSpace = spaces.find((item: any) => item.id === space);
+  const currentSpace = space === "myuploads" ? { id: "myuploads", label: "My Uploads" } : spaces.find((item: any) => item.id === space);
   const rootClass =
     theme === "dark" || (theme === "system" && systemDark)
       ? "app-shell dark"
@@ -1145,12 +1154,13 @@ function MainApp({ onLogout }: any) {
   return (
     <div className={rootClass}>
       <Header
-        user={user}
-        theme={theme}
-        setTheme={setTheme}
-        onProfile={() => setProfileOpen((prev) => !prev)}
-        onLogout={onLogout}
-      />
+          user={user}
+          theme={theme}
+          setTheme={setTheme}
+          onProfile={() => setProfileOpen((prev) => !prev)}
+          onLogout={onLogout}
+          onMyUploads={() => selectSpace("myuploads")}
+        />
       <div className="app-body">
         <Sidebar spaces={spaces} activeSpace={space} onSelect={selectSpace} />
         <main className="main-content">
