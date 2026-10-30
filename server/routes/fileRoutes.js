@@ -2,8 +2,9 @@
 const router = express.Router();
 const mongoose = require('mongoose');
 const File = require('../models/File');
+const Subject = require('../models/Subject');
 const { requireAuth } = require('../middleware/auth');
-const { upload, uploadToR2, getPresignedUrl } = require('../services/storageService');
+const { upload, uploadToR2, getPresignedUrl, deleteFromR2 } = require('../services/storageService');
 
 const hasSpaceAccess = (userSpaces, spaceId) => (userSpaces || []).includes(spaceId);
 
@@ -17,21 +18,38 @@ const formatSize = (bytes) => {
 
 router.get('/my/uploads', requireAuth, async (req, res) => {
   try {
-    const files = await File.find({ uploaderId: req.user.id })
-      .sort({ createdAt: -1 })
-      .populate('subjectId', 'name shortName');
-    const formattedFiles = files.map(f => ({
-      _id: f._id,
-      name: f.originalName,
-      subject: f.subjectId,
-      space: f.spaceId,
-      uploader: f.uploaderName,
-      uploadedAt: f.createdAt,
-      size: f.size,
-      type: f.mimeType,
-      storageKey: f.storageKey
-    }));
-    console.log("FORMATTING CALLED"); res.json(formattedFiles);
+    const { search } = req.query;
+    const query = { uploaderId: req.user.id };
+    if (search) {
+      query.originalName = { $regex: search, $options: 'i' };
+    }
+    const files = await File.find(query).sort({ createdAt: -1 });
+    
+    // Look up subject details
+    const subjectIds = files.map(f => f.subjectId).filter(Boolean);
+    const subjects = await Subject.find({ _id: { $in: subjectIds } });
+    const subjectMap = {};
+    subjects.forEach(s => {
+      subjectMap[s._id.toString()] = s;
+    });
+
+    const formattedFiles = files.map(f => {
+      const sObj = subjectMap[f.subjectId?.toString()];
+      return {
+        _id: f._id,
+        name: f.originalName,
+        subject: f.subjectId ? f.subjectId.toString() : '',
+        subjectName: sObj?.name || '',
+        subjectShortName: sObj?.shortName || '',
+        space: f.spaceId,
+        uploader: f.uploaderName,
+        uploadedAt: f.createdAt,
+        size: f.size,
+        type: f.mimeType,
+        storageKey: f.storageKey
+      };
+    });
+    res.json(formattedFiles);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -151,6 +169,31 @@ router.get('/:fileId/download', requireAuth, async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ message: 'Error generating download link', error: error.message });
+  }
+});
+
+router.delete('/:fileId', requireAuth, async (req, res) => {
+  try {
+    const file = await File.findById(req.params.fileId);
+    if (!file) return res.status(404).json({ message: 'File not found' });
+    
+    // Check if current user is owner or admin
+    if (file.uploaderId && file.uploaderId.toString() !== req.user.id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Forbidden: You can only delete your own uploads' });
+    }
+
+    try {
+      if (file.storageKey) {
+        await deleteFromR2(file.storageKey);
+      }
+    } catch (r2Err) {
+      console.error('R2 deletion notice:', r2Err.message);
+    }
+
+    await File.findByIdAndDelete(req.params.fileId);
+    res.json({ success: true, message: 'File deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting file', error: error.message });
   }
 });
 

@@ -1,3 +1,5 @@
+import { fileType, formatDate, sizeInBytes } from "./utils/fileUtils";
+import MyUploadsPage from "./MyUploadsPage";
 ﻿import AdminApp from "./admin/AdminApp";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -20,7 +22,7 @@ const queryClient = new QueryClient();
 type Theme = "light" | "dark" | "system";
 type ViewMode = "grid" | "list";
 
-function Icon({ name, size = 16 }: { name: string; size?: number }) {
+export function Icon({ name, size = 16 }: { name: string; size?: number }) {
   const paths: Record<string, React.ReactNode> = {
     book: (
       <>
@@ -112,6 +114,16 @@ function Icon({ name, size = 16 }: { name: string; size?: number }) {
       <>
         <circle cx="12" cy="12" r="3" />
         <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+      </>
+    ),
+    trash: (
+      <>
+        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6" />
+      </>
+    ),
+    arrowLeft: (
+      <>
+        <path d="m12 19-7-7 7-7M19 12H5" />
       </>
     ),
     logout: (
@@ -371,7 +383,7 @@ function RegisterPage({ onBack, onDone }: any) {
     </div>
   );
 }
-function Avatar({ name = "Student" }: { name?: string }) {
+export function Avatar({ name = "Student" }: { name?: string }) {
   const initials = name
     .split(" ")
     .map((part) => part[0])
@@ -439,7 +451,7 @@ function UserMenu({
     </div>
   );
 }
-function Header({ user, theme, setTheme, onProfile, onLogout, onMyUploads }: any) {
+export function Header({ user, theme, setTheme, onProfile, onLogout, onMyUploads, onNavigateHome }: any) {
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -455,9 +467,7 @@ function Header({ user, theme, setTheme, onProfile, onLogout, onMyUploads }: any
 
   return (
     <header className="app-header">
-      <div
-        className="brand"
-      >
+      <div className="brand" onClick={onNavigateHome} style={{ cursor: "pointer" }} title="College Files">
         <div className="brand-mark">
           <Icon name="book" size={17} />
         </div>
@@ -491,9 +501,24 @@ function Header({ user, theme, setTheme, onProfile, onLogout, onMyUploads }: any
     </header>
   );
 }
-function Sidebar({ spaces, activeSpace, onSelect }: any) {
+export function Sidebar({ spaces, activeSpace, onSelect, onMyUploads }: any) {
   return (
     <aside className="sidebar">
+      <p className="eyebrow">Navigation</p>
+      <nav style={{ marginBottom: 14 }}>
+        <button
+          className={
+            activeSpace === "myuploads" ? "space-button active" : "space-button"
+          }
+          onClick={onMyUploads}
+        >
+          <Icon name="clock" size={15} />
+          <span>
+            <strong>My Uploads</strong>
+            <small>Your uploaded files</small>
+          </span>
+        </button>
+      </nav>
       <p className="eyebrow">My Spaces</p>
       <nav>
         {spaces.map((space: any) => (
@@ -515,36 +540,7 @@ function Sidebar({ spaces, activeSpace, onSelect }: any) {
     </aside>
   );
 }
-function fileType(type: string, name?: string) {
-  const value = type.toLowerCase();
-  const ext = name ? name.split(".").pop()?.toLowerCase() || "" : "";
-  if (value.includes("pdf") || ext === "pdf") return ["PDF", "pdf"];
-  if (value.includes("presentation") || value.includes("ppt") || ext.startsWith("ppt")) return ["PPT", "ppt"];
-  if (value.includes("word") || value.includes("doc") || ext.startsWith("doc")) return ["DOC", "doc"];
-  if (value.includes("sheet") || value.includes("xls") || ext.startsWith("xls")) return ["XLS", "xls"];
-  if (value.includes("image") || ["jpg", "jpeg", "png", "gif", "webp"].some((e) => value.includes(e) || ext === e)) return ["IMG", "img"];
-  return [ext.slice(0, 3).toUpperCase() || value.slice(0, 3).toUpperCase() || "FILE", "file"];
-}
-function formatDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-function sizeInBytes(value: string) {
-  const match = value.match(/([\d.]+)\s*(KB|MB|GB|B)/i);
-  if (!match) return 0;
-  const units: Record<string, number> = {
-    B: 1,
-    KB: 1024,
-    MB: 1024 ** 2,
-    GB: 1024 ** 3,
-  };
-  return Number(match[1]) * (units[match[2].toUpperCase()] || 1);
-}
+
 function FileCard({ file, subjectLabel, onPreview, onDownload }: any) {
   const [label, kind] = fileType(file.type, file.name);
   return (
@@ -615,19 +611,23 @@ function FileRow({ file, subjectLabel, onPreview, onDownload }: any) {
     </div>
   );
 }
-function UploadModal({ space, subject, subjects, onClose }: any) {
+export function UploadModal({ space: initialSpace, spaces, subject, subjects, onClose }: any) {
   const queryClient = useQueryClient();
   const [file, setFile] = useState<File | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState("");
+  const [selectedSpace, setSelectedSpace] = useState(
+    initialSpace && initialSpace !== "myuploads" ? initialSpace : (spaces?.[0]?.id || "")
+  );
   const [selectedSubject, setSelectedSubject] = useState(
     subject === "all" ? "" : subject,
   );
   const mutation = useMutation({
-    mutationFn: () => api.uploadFile(space, selectedSubject, file as File),
+    mutationFn: () => api.uploadFile(selectedSpace, selectedSubject, file as File),
     onSuccess: () => {
       setProgress(100);
-      queryClient.invalidateQueries({ queryKey: ["files", space] });
+      queryClient.invalidateQueries({ queryKey: ["files"] });
+      queryClient.invalidateQueries({ queryKey: ["myUploads"] });
       window.setTimeout(onClose, 500);
     },
     onError: (e: any) => {
@@ -642,15 +642,28 @@ function UploadModal({ space, subject, subjects, onClose }: any) {
           <div>
             <h2>Upload file</h2>
             <p>
-              {selectedSubject
-                ? `${space} -> ${selectedSubject}`
-                : "Choose a subject below"}
+              {selectedSpace && selectedSubject
+                ? `${selectedSpace} -> ${selectedSubject}`
+                : "Choose destination and subject below"}
             </p>
           </div>
           <button onClick={onClose}>
             <Icon name="x" />
           </button>
         </div>
+        {(!initialSpace || initialSpace === "myuploads") && spaces && spaces.length > 0 && (
+          <select
+            value={selectedSpace}
+            onChange={(e) => setSelectedSpace(e.target.value)}
+            style={{ marginBottom: 10 }}
+          >
+            {spaces.map((sp: any) => (
+              <option key={sp.id} value={sp.id}>
+                Destination: {sp.label}
+              </option>
+            ))}
+          </select>
+        )}
         {subject === "all" && (
           <select
             value={selectedSubject}
@@ -706,7 +719,7 @@ function UploadModal({ space, subject, subjects, onClose }: any) {
     </div>
   );
 }
-function PreviewModal({ file, subjectLabel, onClose }: any) {
+export function PreviewModal({ file, subjectLabel, onClose }: any) {
   const [label] = fileType(file.type, file.name);
   const isPdf = file.type.toLowerCase().includes("pdf");
   const isImage =
@@ -784,7 +797,7 @@ function PreviewModal({ file, subjectLabel, onClose }: any) {
     </div>
   );
 }
-function ProfileModal({ user, onClose }: any) {
+export function ProfileModal({ user, onClose }: any) {
   return (
     <div className="modal-backdrop">
       <div className="profile-dialog">
@@ -1052,7 +1065,7 @@ function Dashboard({ space, spaceLabel, subjects, onPreview }: any) {
     </>
   );
 }
-function MainApp({ onLogout }: any) {
+function MainApp({ onLogout, onNavigate }: any) {
   const [theme, setTheme] = useState<Theme>("light");
   const [systemDark, setSystemDark] = useState(false);
   const [space, setSpace] = useState("");
@@ -1159,10 +1172,11 @@ function MainApp({ onLogout }: any) {
           setTheme={setTheme}
           onProfile={() => setProfileOpen((prev) => !prev)}
           onLogout={onLogout}
-          onMyUploads={() => selectSpace("myuploads")}
+          onMyUploads={() => onNavigate("/myuploads")}
+          onNavigateHome={() => onNavigate("/")}
         />
       <div className="app-body">
-        <Sidebar spaces={spaces} activeSpace={space} onSelect={selectSpace} />
+        <Sidebar spaces={spaces} activeSpace={space} onSelect={selectSpace} onMyUploads={() => onNavigate("/myuploads")} />
         <main className="main-content">
           {dashboardReady ? (
             <Dashboard
@@ -1199,20 +1213,71 @@ function MainApp({ onLogout }: any) {
 }
 function App() {
   const user = getUserInfo();
-  const [view, setView] = useState(
-    getAuthToken() ? (user?.role === "admin" ? "admin" : "app") : "login",
-  );
+  const [view, setView] = useState(() => {
+    const token = getAuthToken();
+    if (!token) return "login";
+    if (user?.role === "admin") return "admin";
+    if (window.location.pathname === "/myuploads") return "myuploads";
+    return "app";
+  });
+
+  const navigate = (path: string, spaceId?: string) => {
+    window.history.pushState({}, "", path);
+    if (path === "/myuploads") {
+      setView("myuploads");
+    } else {
+      if (spaceId && user?.email) {
+        localStorage.setItem(`college-files:last-space:${user.email}`, spaceId);
+      }
+      setView("app");
+    }
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const token = getAuthToken();
+      const user = getUserInfo();
+      if (!token) {
+        setView("login");
+        return;
+      }
+      if (user?.role === "admin") {
+        setView("admin");
+        return;
+      }
+      if (window.location.pathname === "/myuploads") {
+        setView("myuploads");
+      } else {
+        setView("app");
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
   const logout = () => {
     removeAuthToken();
     queryClient.clear();
     setView("login");
   };
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      logout();
+    };
+    window.addEventListener("auth:unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("auth:unauthorized", handleUnauthorized);
+  }, []);
+
   if (view === "login")
     return (
       <LoginPage
-        onLogin={() =>
-          setView(getUserInfo()?.role === "admin" ? "admin" : "app")
-        }
+        onLogin={() => {
+          const user = getUserInfo();
+          if (user?.role === "admin") setView("admin");
+          else if (window.location.pathname === "/myuploads") setView("myuploads");
+          else setView("app");
+        }}
         onRegister={() => setView("register")}
       />
     );
@@ -1220,11 +1285,17 @@ function App() {
     return (
       <RegisterPage
         onBack={() => setView("login")}
-        onDone={() => setView("app")}
+        onDone={() => {
+          if (window.location.pathname === "/myuploads") setView("myuploads");
+          else setView("app");
+        }}
       />
     );
   if (view === "admin") return <AdminApp onLogout={logout} />;
-  return <MainApp onLogout={logout} />;
+  if (view === "myuploads") {
+    return <MyUploadsPage onLogout={logout} onNavigate={navigate} />;
+  }
+  return <MainApp onLogout={logout} onNavigate={navigate} />;
 }
 export default function AppWrapper() {
   return (

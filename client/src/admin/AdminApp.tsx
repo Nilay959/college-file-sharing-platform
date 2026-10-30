@@ -47,8 +47,17 @@ function NavButton({ active, onClick, children }: any) {
 }
 
 function DashboardView() {
-  const { data, isLoading } = useQuery({ queryKey: ["adminStats"], queryFn: api.getAdminStats });
+  const { data, isLoading, error } = useQuery({ queryKey: ["adminStats"], queryFn: api.getAdminStats });
   if (isLoading) return <div>Loading...</div>;
+  if (error) {
+    return (
+      <div className="bg-amber-50 border border-amber-200 text-amber-900 p-6 rounded-lg space-y-3">
+        <h3 className="font-bold text-lg">Unable to load dashboard data</h3>
+        <p className="text-sm">{(error as any)?.message || "Your session may have expired."}</p>
+        <p className="text-sm">Please click <strong>Logout</strong> in the bottom left corner and log back in to refresh your admin session.</p>
+      </div>
+    );
+  }
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Dashboard</h2>
