@@ -1,6 +1,7 @@
 import { fileType, formatDate, sizeInBytes } from "./utils/fileUtils";
 import MyUploadsPage from "./MyUploadsPage";
-﻿import AdminApp from "./admin/AdminApp";
+import AdminApp from "./admin/AdminApp";
+import { useTheme, type Theme } from "./utils/theme";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   QueryClient,
@@ -19,7 +20,6 @@ import {
 } from "./services/api";
 
 const queryClient = new QueryClient();
-type Theme = "light" | "dark" | "system";
 type ViewMode = "grid" | "list";
 
 export function Icon({ name, size = 16 }: { name: string; size?: number }) {
@@ -1066,8 +1066,7 @@ function Dashboard({ space, spaceLabel, subjects, onPreview }: any) {
   );
 }
 function MainApp({ onLogout, onNavigate }: any) {
-  const [theme, setTheme] = useState<Theme>("light");
-  const [systemDark, setSystemDark] = useState(false);
+  const { theme, setTheme, isDark, systemDark } = useTheme();
   const [space, setSpace] = useState("");
   const [previewFile, setPreviewFile] = useState<any>(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -1088,13 +1087,7 @@ function MainApp({ onLogout, onNavigate }: any) {
   useEffect(() => {
     if (isError) onLogout();
   }, [isError, onLogout]);
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const update = () => setSystemDark(media.matches);
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
+
   const spaces = useMemo(
     () =>
       (user?.spaces || []).map((value: string) => {
@@ -1158,10 +1151,7 @@ function MainApp({ onLogout, onNavigate }: any) {
     ];
   }, [publicSubjects, hierarchy, user]);
   const currentSpace = space === "myuploads" ? { id: "myuploads", label: "My Uploads" } : spaces.find((item: any) => item.id === space);
-  const rootClass =
-    theme === "dark" || (theme === "system" && systemDark)
-      ? "app-shell dark"
-      : "app-shell";
+  const rootClass = isDark ? "app-shell dark" : "app-shell";
   const dashboardReady =
     !userLoading && !hierarchyLoading && !subjectsLoading && currentSpace;
   return (
@@ -1212,6 +1202,7 @@ function MainApp({ onLogout, onNavigate }: any) {
   );
 }
 function App() {
+  useTheme();
   const user = getUserInfo();
   const [view, setView] = useState(() => {
     const token = getAuthToken();

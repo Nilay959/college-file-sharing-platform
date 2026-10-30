@@ -8,6 +8,7 @@ import {
   UploadModal,
 } from "./App";
 import { fileType, formatDate, sizeInBytes } from "./utils/fileUtils";
+import { useTheme } from "./utils/theme";
 
 interface MyUploadsPageProps {
   onLogout: () => void;
@@ -16,10 +17,7 @@ interface MyUploadsPageProps {
 
 export default function MyUploadsPage({ onLogout, onNavigate }: MyUploadsPageProps) {
   const queryClient = useQueryClient();
-  const [theme, setTheme] = useState<"light" | "dark" | "system">(() => {
-    return (localStorage.getItem("college-files:theme") as any) || "light";
-  });
-  const [systemDark, setSystemDark] = useState(false);
+  const { theme, setTheme, isDark, systemDark } = useTheme();
   const [subject, setSubject] = useState("all");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<"date" | "name" | "size" | "subject">("date");
@@ -33,23 +31,8 @@ export default function MyUploadsPage({ onLogout, onNavigate }: MyUploadsPagePro
   const [sortOpen, setSortOpen] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
 
-  // System dark mode listener
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const update = () => setSystemDark(media.matches);
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
-
-  // Sync theme to localStorage
-  useEffect(() => {
-    localStorage.setItem("college-files:theme", theme);
-  }, [theme]);
-
   const toggleTheme = () => {
-    const isCurrentlyDark = theme === "dark" || (theme === "system" && systemDark);
-    setTheme(isCurrentlyDark ? "light" : "dark");
+    setTheme(isDark ? "light" : "dark");
   };
 
   // Click outside for sort menu
@@ -223,10 +206,7 @@ export default function MyUploadsPage({ onLogout, onNavigate }: MyUploadsPagePro
     });
   }, [myFiles, subject, sort, sortDirection, publicSubjects]);
 
-  const rootClass =
-    theme === "dark" || (theme === "system" && systemDark)
-      ? "app-shell dark"
-      : "app-shell";
+  const rootClass = isDark ? "app-shell dark" : "app-shell";
 
   const isReady = !userLoading && !hierarchyLoading && !subjectsLoading;
 
@@ -259,7 +239,7 @@ export default function MyUploadsPage({ onLogout, onNavigate }: MyUploadsPagePro
             title="Toggle Light / Dark mode"
           >
             <Icon
-              name={theme === "dark" || (theme === "system" && systemDark) ? "sun" : "moon"}
+              name={isDark ? "sun" : "moon"}
               size={18}
             />
           </button>
@@ -672,10 +652,10 @@ export default function MyUploadsPage({ onLogout, onNavigate }: MyUploadsPagePro
                 <Icon name="x" size={16} />
               </button>
             </div>
-            <div style={{ margin: "16px 0", fontSize: 13, lineHeight: 1.6, color: "#4b5563" }}>
+            <div className="delete-dialog-content">
               Are you sure you want to permanently delete{" "}
-              <strong style={{ color: "#111827" }}>{deleteFile.name}</strong>?
-              <p style={{ marginTop: 8, fontSize: 12, color: "#6b7280" }}>
+              <strong>{deleteFile.name}</strong>?
+              <p>
                 This file will be permanently removed from Cloudflare R2 and will no longer be visible to other students in {formatSpaceLabel(deleteFile.space)}.
               </p>
             </div>

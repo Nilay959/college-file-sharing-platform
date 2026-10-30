@@ -1,4 +1,4 @@
-﻿@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -1596,4 +1596,186 @@ button {
 .dark .my-uploads-toolbar {
   background: #161b22 !important;
   border-color: #202536 !important;
+}
+
+
+/* Global Dark Theme Polishes */
+html.dark,
+body.dark,
+.dark body {
+  background: #111520 !important;
+  color: #e2e6f0 !important;
+}
+
+/* File Cards & Previews in Dark Mode */
+.dark .file-card {
+  background: #161b22 !important;
+  border-color: #202536 !important;
+}
+.dark .file-card:hover {
+  border-color: #3b4560 !important;
+  box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2) !important;
+}
+.dark .file-card.selected {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
+}
+
+.dark .file-preview {
+  background: rgba(239, 68, 68, 0.12) !important;
+}
+.dark .file-preview.doc {
+  background: rgba(37, 99, 235, 0.12) !important;
+}
+.dark .file-preview.xls {
+  background: rgba(16, 185, 129, 0.12) !important;
+}
+.dark .file-preview.ppt {
+  background: rgba(245, 158, 11, 0.12) !important;
+}
+.dark .file-preview.img {
+  background: rgba(168, 85, 247, 0.12) !important;
+}
+
+.dark .file-preview span {
+  background: rgba(239, 68, 68, 0.22) !important;
+  color: #f87171 !important;
+}
+.dark .file-preview.doc span {
+  background: rgba(37, 99, 235, 0.22) !important;
+  color: #60a5fa !important;
+}
+.dark .file-preview.xls span {
+  background: rgba(16, 185, 129, 0.22) !important;
+  color: #34d399 !important;
+}
+.dark .file-preview.ppt span {
+  background: rgba(245, 158, 11, 0.22) !important;
+  color: #fbbf24 !important;
+}
+.dark .file-preview.img span {
+  background: rgba(168, 85, 247, 0.22) !important;
+  color: #c084fc !important;
+}
+
+/* File Table & List View */
+.file-table {
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+}
+.file-table-header {
+  height: 36px;
+  border-bottom: 1px solid #e5e7eb;
+  color: #9ca3af;
+  background: #f8fafc;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: grid;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+}
+.dark .file-table {
+  background: #161b22 !important;
+  border-color: #202536 !important;
+}
+.dark .file-table-header {
+  background: #161b22 !important;
+  border-color: #202536 !important;
+  color: #9ca3af !important;
+}
+
+/* Search Box & Inputs */
+.dark .search-box {
+  background: #1c2030 !important;
+  border-color: #2d3448 !important;
+}
+.dark .search-box input {
+  background: transparent !important;
+  color: #f3f4f6 !important;
+}
+.dark .search-box input::placeholder {
+  color: #64748b !important;
+}
+
+/* Drop Zone, Document Area & Dialogs */
+.dark .drop-zone {
+  background: #111520 !important;
+  border-color: #2d3448 !important;
+}
+.dark .drop-zone:hover {
+  background: #161b26 !important;
+  border-color: #3b82f6 !important;
+}
+.dark .drop-zone strong {
+  color: #f3f4f6 !important;
+}
+.dark .drop-zone span,
+.dark .drop-zone small {
+  color: #9ca3af !important;
+}
+
+.dark .document-area {
+  background: #0d1117 !important;
+}
+.dark .unavailable {
+  background: #161b22 !important;
+  border-color: #2d3448 !important;
+  color: #e2e6f0 !important;
+}
+.dark .preview-dialog header > button:first-child {
+  color: #e2e6f0 !important;
+}
+
+/* Delete Dialog Content */
+.delete-dialog-content {
+  margin: 16px 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #4b5563;
+}
+.delete-dialog-content strong {
+  color: #111827;
+}
+.delete-dialog-content p {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #6b7280;
+}
+.dark .delete-dialog-content {
+  color: #cbd5e1 !important;
+}
+.dark .delete-dialog-content strong {
+  color: #f3f4f6 !important;
+}
+.dark .delete-dialog-content p {
+  color: #9ca3af !important;
+}
+
+/* Icon Buttons & Top Bar Controls */
+.dark .icon-button {
+  color: #a8b4c6 !important;
+}
+.dark .icon-button:hover {
+  background: #252a3a !important;
+  color: #f3f4f6 !important;
+}
+
+/* Empty States */
+.dark .empty-state h3,
+.dark .empty-state strong {
+  color: #f3f4f6 !important;
+}
+.dark .empty-state p,
+.dark .empty-state span {
+  color: #9ca3af !important;
+}
+.dark .empty-icon {
+  background: #1c2030 !important;
+  border-color: #2d3448 !important;
+  color: #60a5fa !important;
 }
