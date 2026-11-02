@@ -1,6 +1,6 @@
-import React, { useState, useRef } from "react";
-import { Icon } from "./Icons";
-import { Group, FileItem, api } from "../services/api";
+import React, { useState, useRef, useEffect } from "react";
+import { Icon, Avatar } from "./Icons";
+import { Group, FileItem, User, ActivityItem, api } from "../services/api";
 
 // 1. Create Group Modal
 export function CreateGroupModal({
@@ -504,6 +504,231 @@ export function DeleteModal({
             disabled={loading}
           >
             {loading ? "Deleting..." : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 6. User Settings Modal
+export function SettingsModal({
+  isOpen,
+  onClose,
+  user,
+  onUpdateUser,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  user: User | null;
+  onUpdateUser: (updatedUser: User) => void;
+}) {
+  const [name, setName] = useState(user?.name || "");
+  const [avatar, setAvatar] = useState(user?.avatar || "");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name || "");
+      setAvatar(user.avatar || "");
+    }
+  }, [user, isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
+    setError("");
+
+    try {
+      const updateData: any = {};
+      if (name.trim()) updateData.name = name.trim();
+      if (avatar !== undefined) updateData.avatar = avatar.trim();
+      if (password.trim()) updateData.password = password;
+
+      const res = await api.updateProfile(updateData);
+      onUpdateUser(res.user);
+      setPassword("");
+      setMessage("Profile settings updated successfully!");
+      setTimeout(() => {
+        setMessage("");
+        onClose();
+      }, 1200);
+    } catch (err: any) {
+      setError(err.message || "Failed to update profile");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card" style={{ maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <div className="modal-title-wrap">
+            <div className="modal-icon-badge blue">
+              <Icon name="settings" size={18} />
+            </div>
+            <div>
+              <h3>Account Settings</h3>
+              <p>Manage your profile and account preferences</p>
+            </div>
+          </div>
+          <button className="modal-close-btn" onClick={onClose} disabled={loading}>
+            <Icon name="x" size={16} />
+          </button>
+        </div>
+
+        {message && <div className="modal-success-banner">{message}</div>}
+        {error && <div className="modal-error-banner">{error}</div>}
+
+        <form onSubmit={handleSubmit}>
+          <div className="profile-avatar-preview-row" style={{ display: "flex", alignItems: "center", gap: 14, margin: "16px 0" }}>
+            <Avatar name={name || user?.name} avatarUrl={avatar || user?.avatar} size={48} />
+            <div className="form-group" style={{ flex: 1, margin: 0 }}>
+              <label>Avatar Image URL</label>
+              <input
+                type="url"
+                value={avatar}
+                onChange={(e) => setAvatar(e.target.value)}
+                placeholder="https://example.com/photo.jpg"
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>Full Name *</label>
+            <input
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Email</label>
+            <input
+              type="email"
+              disabled
+              value={user?.email || ""}
+              style={{ opacity: 0.65, cursor: "not-allowed" }}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>New Password (Optional)</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Leave blank to keep current password"
+            />
+          </div>
+
+          <div className="modal-footer">
+            <button type="button" className="btn-secondary" onClick={onClose} disabled={loading}>
+              Cancel
+            </button>
+            <button type="submit" className="btn-primary" disabled={loading || !name.trim()}>
+              {loading ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// 7. Notifications Modal
+export function NotificationsModal({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  const [stats, setStats] = useState<{ recentActivity: ActivityItem[] } | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setLoading(true);
+    api.getDashboard()
+      .then((data) => setStats(data))
+      .catch((err) => console.error("Failed to load notifications:", err))
+      .finally(() => setLoading(false));
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <div className="modal-title-wrap">
+            <div className="modal-icon-badge blue">
+              <Icon name="bell" size={18} />
+            </div>
+            <div>
+              <h3>Recent Notifications</h3>
+              <p>Activity across all your groups</p>
+            </div>
+          </div>
+          <button className="modal-close-btn" onClick={onClose}>
+            <Icon name="x" size={16} />
+          </button>
+        </div>
+
+        <div className="notifications-modal-list" style={{ maxHeight: 360, overflowY: "auto", margin: "16px 0" }}>
+          {loading ? (
+            <div style={{ textAlign: "center", padding: 24, color: "#94A3B8" }}>Loading activity...</div>
+          ) : !stats?.recentActivity || stats.recentActivity.length === 0 ? (
+            <div style={{ textAlign: "center", padding: 24, color: "#94A3B8" }}>No recent notifications</div>
+          ) : (
+            stats.recentActivity.map((act) => (
+              <div
+                key={act._id}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 12,
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  marginBottom: 6,
+                  backgroundColor: "rgba(255, 255, 255, 0.03)",
+                  fontSize: 13,
+                }}
+              >
+                <div style={{ color: "#6366F1", marginTop: 2 }}>
+                  <Icon name={act.action.includes("upload") ? "upload" : "users"} size={16} />
+                </div>
+                <div>
+                  <div>
+                    <strong>{act.userId?.name || "Member"}</strong>{" "}
+                    {act.action === "uploaded_file" && "uploaded"}
+                    {act.action === "joined_group" && "joined"}
+                    {act.action === "created_group" && "created"}{" "}
+                    {act.fileId?.originalName ? `"${act.fileId.originalName}"` : ""}{" "}
+                    in <strong>{act.groupId?.name || "Group"}</strong>
+                  </div>
+                  <small style={{ color: "#94A3B8" }}>
+                    {new Date(act.createdAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}
+                  </small>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="modal-footer">
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            Close
           </button>
         </div>
       </div>
