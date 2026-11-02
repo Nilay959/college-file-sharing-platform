@@ -1,199 +1,496 @@
-﻿const express = require('express');
+const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose');
 const File = require('../models/File');
-const Subject = require('../models/Subject');
+const Group = require('../models/Group');
+const GroupMember = require('../models/GroupMember');
+const Activity = require('../models/Activity');
 const { requireAuth } = require('../middleware/auth');
 const { upload, uploadToR2, getPresignedUrl, deleteFromR2 } = require('../services/storageService');
 
-const hasSpaceAccess = (userSpaces, spaceId) => (userSpaces || []).includes(spaceId);
+// Helper to determine mimeType category for filtering
+const getMimeCategoryFilter = (type) => {
+  if (!type || type === 'all') return null;
+  const lower = type.toLowerCase();
+  if (lower === 'pdf') {
+    return { mimeType: { $regex: 'pdf', $options: 'i' } };
+  }
+  if (lower === 'doc' || lower === 'document') {
+    return {
+      $or: [
+        { mimeType: { $regex: 'word|officedocument.wordprocessingml', $options: 'i' } },
+        { originalName: { $regex: '\\.(docx?|txt|rtf|odt)$', $options: 'i' } },
+      ],
+    };
+  }
+  if (lower === 'sheet' || lower === 'spreadsheet') {
+    return {
+      $or: [
+        { mimeType: { $regex: 'excel|spreadsheet|officedocument.spreadsheetml', $options: 'i' } },
+        { originalName: { $regex: '\\.(xlsx?|csv|ods)$', $options: 'i' } },
+      ],
+    };
+  }
+  if (lower === 'presentation' || lower === 'ppt') {
+    return {
+      $or: [
+        { mimeType: { $regex: 'presentation|powerpoint|officedocument.presentationml', $options: 'i' } },
+        { originalName: { $regex: '\\.(pptx?|odp)$', $options: 'i' } },
+      ],
+    };
+  }
+  if (lower === 'image') {
+    return { mimeType: { $regex: '^image/', $options: 'i' } };
+  }
+  if (lower === 'archive' || lower === 'zip') {
+    return {
+      $or: [
+        { mimeType: { $regex: 'zip|compressed|tar|rar|7z', $options: 'i' } },
+        { originalName: { $regex: '\\.(zip|rar|7z|tar|gz)$', $options: 'i' } },
+      ],
+    };
+  }
+  return null;
+};
 
-const formatSize = (bytes) => {
-  if (bytes === 0) return '0 Bytes';
+// Helper to format file size in human readable string
+const formatFileSize = (bytes) => {
+  if (!bytes || bytes === 0) return '0 B';
   const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const sizes = ['B', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-router.get('/my/uploads', requireAuth, async (req, res) => {
+// 1. Upload file to a specific group
+router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
   try {
-    const { search } = req.query;
-    const query = { uploaderId: req.user.id };
-    if (search) {
-      query.originalName = { $regex: search, $options: 'i' };
+    const { groupId } = req.body;
+    if (!groupId) {
+      return res.status(400).json({ message: 'Target group ID is required' });
     }
-    const files = await File.find(query).sort({ createdAt: -1 });
-    
-    // Look up subject details
-    const subjectIds = files.map(f => f.subjectId).filter(Boolean);
-    const subjects = await Subject.find({ _id: { $in: subjectIds } });
-    const subjectMap = {};
-    subjects.forEach(s => {
-      subjectMap[s._id.toString()] = s;
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file provided for upload' });
+    }
+
+    // Security Check: Caller must be a member of the group
+    const membership = await GroupMember.findOne({
+      userId: req.user.id,
+      groupId,
     });
 
-    const formattedFiles = files.map(f => {
-      const sObj = subjectMap[f.subjectId?.toString()];
-      return {
-        _id: f._id,
-        name: f.originalName,
-        subject: f.subjectId ? f.subjectId.toString() : '',
-        subjectName: sObj?.name || '',
-        subjectShortName: sObj?.shortName || '',
-        space: f.spaceId,
-        uploader: f.uploaderName,
-        uploadedAt: f.createdAt,
-        size: f.size,
-        type: f.mimeType,
-        storageKey: f.storageKey
-      };
-    });
-    res.json(formattedFiles);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+    if (!membership) {
+      return res.status(403).json({ message: 'You must be a member of this group to upload files' });
+    }
 
-router.get('/:spaceId', requireAuth, async (req, res) => {
-  const { spaceId } = req.params;
-  const { subjectId, search, page = 1, limit = 20 } = req.query;
+    const group = await Group.findById(groupId);
+    if (!group) return res.status(404).json({ message: 'Group not found' });
 
-  if (!hasSpaceAccess(req.user.spaces, spaceId)) {
-    return res.status(403).json({ message: 'Forbidden: No access to this space' });
-  }
+    // Generate unique storage key for Cloudflare R2 / S3
+    const timestamp = Date.now();
+    const cleanFileName = req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storageKey = `groups/${groupId}/${timestamp}-${cleanFileName}`;
 
-  const query = { spaceId };
-  if (subjectId && subjectId !== 'all') query.subjectId = subjectId;
-  if (search) query.originalName = { $regex: search, $options: 'i' };
-
-  try {
-    const files = await File.find(query)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit))
-      .populate('uploaderId', 'name email');
-    const formattedFiles = files.map(f => ({
-      _id: f._id,
-      name: f.originalName,
-      subject: f.subjectId,
-      space: f.spaceId,
-      uploader: f.uploaderName,
-      uploadedAt: f.createdAt,
-      size: f.size,
-      type: f.mimeType,
-      storageKey: f.storageKey
-    }));
-    console.log("FORMATTING CALLED"); res.json(formattedFiles);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching files', error: error.message });
-  }
-});
-
-router.post('/:spaceId/:subjectId', requireAuth, upload.single('file'), async (req, res) => {
-  const { spaceId, subjectId } = req.params;
-
-  if (!hasSpaceAccess(req.user.spaces, spaceId)) {
-    return res.status(403).json({ message: 'Forbidden: No access to this space' });
-  }
-
-  if (!req.file) {
-    return res.status(400).json({ message: 'No file uploaded' });
-  }
-
-  try {
-    const uniqueFilename = `${spaceId}/${subjectId}/${Date.now()}-${Math.round(Math.random() * 1E9)}-${req.file.originalname}`;
-    
     // Upload to Cloudflare R2
-    const storageKey = await uploadToR2(req.file.buffer, uniqueFilename, req.file.mimetype);
+    await uploadToR2(req.file.buffer, storageKey, req.file.mimetype);
 
-    const newFile = new File({
+    // Save File document
+    const file = await File.create({
       originalName: req.file.originalname,
-      storageKey: storageKey,
-      spaceId,
-      subjectId,
-      uploaderName: req.user.name,
-      uploaderId: req.user.id,
-      size: formatSize(req.file.size),
-      mimeType: req.file.mimetype.split('/')[1] ? req.file.mimetype.split('/')[1].toUpperCase() : 'UNKNOWN'
+      storageKey,
+      fileSize: req.file.size,
+      mimeType: req.file.mimetype || 'application/octet-stream',
+      uploadedBy: req.user.id,
+      groupId,
+      size: formatFileSize(req.file.size), // backward-compatible string format
     });
 
-    await newFile.save();
+    // Record Activity
+    await Activity.create({
+      userId: req.user.id,
+      groupId,
+      fileId: file._id,
+      action: 'uploaded_file',
+      details: `Uploaded "${file.originalName}" to ${group.name}`,
+    });
+
+    const populated = await File.findById(file._id)
+      .populate('uploadedBy', 'name email avatar')
+      .populate('groupId', 'name inviteCode')
+      .lean();
 
     res.status(201).json({
-      _id: newFile._id,
-      name: newFile.originalName,
-      subject: newFile.subjectId,
-      space: newFile.spaceId,
-      uploader: newFile.uploaderName,
-      uploadedAt: newFile.createdAt,
-      size: newFile.size,
-      type: newFile.mimeType
+      message: 'File uploaded successfully',
+      file: {
+        ...populated,
+        id: populated._id,
+        size: formatFileSize(populated.fileSize),
+      },
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error saving file', error: error.message });
+    console.error('File upload error:', error);
+    res.status(500).json({ message: error.message || 'Failed to upload file' });
   }
 });
 
-router.get('/:fileId/download', requireAuth, async (req, res) => {
+// 2. Get files in a specific group
+router.get('/group/:groupId', requireAuth, async (req, res) => {
   try {
-    const file = await File.findById(req.params.fileId);
-    if (!file) return res.status(404).json({ message: 'File not found' });
-    if (!hasSpaceAccess(req.user.spaces, file.spaceId)) return res.status(403).json({ message: 'Forbidden' });
+    const { groupId } = req.params;
+    const { q, type, sort, uploaderId } = req.query;
 
-    // Try to get Presigned URL from R2
-    try {
-      const presignedUrl = await getPresignedUrl(file.storageKey);
-      return res.redirect(presignedUrl);
-    } catch (r2Error) {
-      console.error("R2 Error:", r2Error.message);
-      
-      // Fallback for older files stored in GridFS
-      if (mongoose.connection.db) {
-        try {
-          const gfsBucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: 'uploads' });
-          const files = await gfsBucket.find({ filename: file.storageKey }).toArray();
-          if (files && files.length > 0) {
-            res.set('Content-Type', file.mimeType);
-            res.set('Content-Disposition', `inline; filename="${file.originalName}"`);
-            const downloadStream = gfsBucket.openDownloadStreamByName(file.storageKey);
-            downloadStream.on('error', () => res.status(404).json({ message: 'File stream error' }));
-            return downloadStream.pipe(res);
-          }
-        } catch (gfsError) {
-          console.error("GFS Fallback error:", gfsError.message);
-        }
-      }
-      
-      return res.status(404).json({ message: 'File not found in R2 or GridFS' });
+    // Security Check: Caller must be a member of this group
+    const membership = await GroupMember.findOne({
+      userId: req.user.id,
+      groupId,
+    });
+
+    if (!membership) {
+      return res.status(403).json({ message: 'You are not a member of this group' });
     }
+
+    const query = { groupId };
+
+    if (q && q.trim()) {
+      query.originalName = { $regex: q.trim(), $options: 'i' };
+    }
+
+    if (uploaderId) {
+      query.uploadedBy = uploaderId;
+    }
+
+    const typeFilter = getMimeCategoryFilter(type);
+    if (typeFilter) {
+      Object.assign(query, typeFilter);
+    }
+
+    let sortOption = { createdAt: -1 };
+    if (sort === 'oldest') sortOption = { createdAt: 1 };
+    if (sort === 'name') sortOption = { originalName: 1 };
+    if (sort === 'size') sortOption = { fileSize: -1 };
+
+    const files = await File.find(query)
+      .populate('uploadedBy', 'name email avatar')
+      .populate('groupId', 'name inviteCode')
+      .sort(sortOption)
+      .lean();
+
+    const formatted = files.map((f) => ({
+      ...f,
+      id: f._id,
+      size: formatFileSize(f.fileSize),
+      canDelete: f.uploadedBy?._id?.toString() === req.user.id || membership.role === 'admin',
+    }));
+
+    res.json(formatted);
   } catch (error) {
-    res.status(500).json({ message: 'Error generating download link', error: error.message });
+    console.error('Fetch group files error:', error);
+    res.status(500).json({ message: error.message || 'Failed to fetch files' });
   }
 });
 
-router.delete('/:fileId', requireAuth, async (req, res) => {
+// 3. Get all accessible files across ALL groups user is part of
+router.get('/', requireAuth, async (req, res) => {
   try {
-    const file = await File.findById(req.params.fileId);
-    if (!file) return res.status(404).json({ message: 'File not found' });
-    
-    // Check if current user is owner or admin
-    if (file.uploaderId && file.uploaderId.toString() !== req.user.id.toString() && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Forbidden: You can only delete your own uploads' });
+    const { q, type, sort, groupId } = req.query;
+
+    // Get all groups user belongs to
+    const memberships = await GroupMember.find({ userId: req.user.id });
+    const userGroupIds = memberships.map((m) => m.groupId);
+
+    if (userGroupIds.length === 0) {
+      return res.json([]);
     }
 
-    try {
-      if (file.storageKey) {
-        await deleteFromR2(file.storageKey);
+    let targetGroupIds = userGroupIds;
+    if (groupId) {
+      // Validate requested groupId is among user's groups
+      if (!userGroupIds.some((id) => id.toString() === groupId)) {
+        return res.status(403).json({ message: 'You are not a member of the requested group' });
       }
-    } catch (r2Err) {
-      console.error('R2 deletion notice:', r2Err.message);
+      targetGroupIds = [groupId];
     }
 
-    await File.findByIdAndDelete(req.params.fileId);
+    const query = { groupId: { $in: targetGroupIds } };
+
+    if (q && q.trim()) {
+      query.originalName = { $regex: q.trim(), $options: 'i' };
+    }
+
+    const typeFilter = getMimeCategoryFilter(type);
+    if (typeFilter) {
+      Object.assign(query, typeFilter);
+    }
+
+    let sortOption = { createdAt: -1 };
+    if (sort === 'oldest') sortOption = { createdAt: 1 };
+    if (sort === 'name') sortOption = { originalName: 1 };
+    if (sort === 'size') sortOption = { fileSize: -1 };
+
+    const files = await File.find(query)
+      .populate('uploadedBy', 'name email avatar')
+      .populate('groupId', 'name inviteCode')
+      .sort(sortOption)
+      .lean();
+
+    const formatted = files.map((f) => {
+      const groupMembership = memberships.find(
+        (m) => m.groupId.toString() === f.groupId?._id?.toString()
+      );
+      const isUploader = f.uploadedBy?._id?.toString() === req.user.id;
+      const isAdmin = groupMembership?.role === 'admin';
+
+      return {
+        ...f,
+        id: f._id,
+        size: formatFileSize(f.fileSize),
+        canDelete: isUploader || isAdmin,
+      };
+    });
+
+    res.json(formatted);
+  } catch (error) {
+    console.error('Fetch all files error:', error);
+    res.status(500).json({ message: error.message || 'Failed to fetch files' });
+  }
+});
+
+// 4. My Uploads: Files uploaded by the logged-in user across their groups
+router.get('/my-uploads', requireAuth, async (req, res) => {
+  try {
+    const { q, type, sort, groupId } = req.query;
+
+    const memberships = await GroupMember.find({ userId: req.user.id });
+    const userGroupIds = memberships.map((m) => m.groupId);
+
+    if (userGroupIds.length === 0) {
+      return res.json([]);
+    }
+
+    let targetGroupIds = userGroupIds;
+    if (groupId) {
+      targetGroupIds = [groupId];
+    }
+
+    const query = {
+      uploadedBy: req.user.id,
+      groupId: { $in: targetGroupIds },
+    };
+
+    if (q && q.trim()) {
+      query.originalName = { $regex: q.trim(), $options: 'i' };
+    }
+
+    const typeFilter = getMimeCategoryFilter(type);
+    if (typeFilter) {
+      Object.assign(query, typeFilter);
+    }
+
+    let sortOption = { createdAt: -1 };
+    if (sort === 'oldest') sortOption = { createdAt: 1 };
+    if (sort === 'name') sortOption = { originalName: 1 };
+    if (sort === 'size') sortOption = { fileSize: -1 };
+
+    const files = await File.find(query)
+      .populate('uploadedBy', 'name email avatar')
+      .populate('groupId', 'name inviteCode')
+      .sort(sortOption)
+      .lean();
+
+    const formatted = files.map((f) => ({
+      ...f,
+      id: f._id,
+      size: formatFileSize(f.fileSize),
+      canDelete: true, // User is the uploader
+    }));
+
+    res.json(formatted);
+  } catch (error) {
+    console.error('Fetch my-uploads error:', error);
+    res.status(500).json({ message: error.message || 'Failed to fetch my uploads' });
+  }
+});
+
+// 5. Shared With Me: Files uploaded by OTHER members in common groups
+router.get('/shared-with-me', requireAuth, async (req, res) => {
+  try {
+    const { q, type, sort, groupId } = req.query;
+
+    const memberships = await GroupMember.find({ userId: req.user.id });
+    const userGroupIds = memberships.map((m) => m.groupId);
+
+    if (userGroupIds.length === 0) {
+      return res.json([]);
+    }
+
+    let targetGroupIds = userGroupIds;
+    if (groupId) {
+      targetGroupIds = [groupId];
+    }
+
+    const query = {
+      uploadedBy: { $ne: req.user.id },
+      groupId: { $in: targetGroupIds },
+    };
+
+    if (q && q.trim()) {
+      query.originalName = { $regex: q.trim(), $options: 'i' };
+    }
+
+    const typeFilter = getMimeCategoryFilter(type);
+    if (typeFilter) {
+      Object.assign(query, typeFilter);
+    }
+
+    let sortOption = { createdAt: -1 };
+    if (sort === 'oldest') sortOption = { createdAt: 1 };
+    if (sort === 'name') sortOption = { originalName: 1 };
+    if (sort === 'size') sortOption = { fileSize: -1 };
+
+    const files = await File.find(query)
+      .populate('uploadedBy', 'name email avatar')
+      .populate('groupId', 'name inviteCode')
+      .sort(sortOption)
+      .lean();
+
+    const formatted = files.map((f) => {
+      const groupMembership = memberships.find(
+        (m) => m.groupId.toString() === f.groupId?._id?.toString()
+      );
+      const isAdmin = groupMembership?.role === 'admin';
+
+      return {
+        ...f,
+        id: f._id,
+        size: formatFileSize(f.fileSize),
+        canDelete: isAdmin, // Group admin can delete any file
+      };
+    });
+
+    res.json(formatted);
+  } catch (error) {
+    console.error('Fetch shared-with-me error:', error);
+    res.status(500).json({ message: error.message || 'Failed to fetch shared files' });
+  }
+});
+
+// 6. Download file (Presigned R2 URL)
+router.get('/:id/download', requireAuth, async (req, res) => {
+  try {
+    const file = await File.findById(req.params.id);
+    if (!file) return res.status(404).json({ message: 'File not found' });
+
+    // Security Check: Caller must belong to the file's group
+    const membership = await GroupMember.findOne({
+      userId: req.user.id,
+      groupId: file.groupId,
+    });
+
+    if (!membership) {
+      return res.status(403).json({ message: 'You do not have permission to download this file' });
+    }
+
+    const downloadUrl = await getPresignedUrl(file.storageKey);
+
+    if (req.query.redirect === 'true') {
+      return res.redirect(downloadUrl);
+    }
+
+    res.json({
+      downloadUrl,
+      fileName: file.originalName,
+      mimeType: file.mimeType,
+      size: formatFileSize(file.fileSize),
+    });
+  } catch (error) {
+    console.error('Download file error:', error);
+    res.status(500).json({ message: error.message || 'Failed to generate download URL' });
+  }
+});
+
+// 7. Preview file
+router.get('/:id/preview', requireAuth, async (req, res) => {
+  try {
+    const file = await File.findById(req.params.id)
+      .populate('uploadedBy', 'name email avatar')
+      .populate('groupId', 'name inviteCode');
+
+    if (!file) return res.status(404).json({ message: 'File not found' });
+
+    // Security Check: Caller must belong to the file's group
+    const membership = await GroupMember.findOne({
+      userId: req.user.id,
+      groupId: file.groupId._id,
+    });
+
+    if (!membership) {
+      return res.status(403).json({ message: 'You do not have permission to preview this file' });
+    }
+
+    const previewUrl = await getPresignedUrl(file.storageKey);
+
+    res.json({
+      previewUrl,
+      file: {
+        ...file.toObject(),
+        id: file._id,
+        size: formatFileSize(file.fileSize),
+      },
+    });
+  } catch (error) {
+    console.error('Preview file error:', error);
+    res.status(500).json({ message: error.message || 'Failed to preview file' });
+  }
+});
+
+// 8. Delete file (Uploader OR Group Admin only)
+router.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    const file = await File.findById(req.params.id);
+    if (!file) return res.status(404).json({ message: 'File not found' });
+
+    // Check membership
+    const membership = await GroupMember.findOne({
+      userId: req.user.id,
+      groupId: file.groupId,
+    });
+
+    if (!membership) {
+      return res.status(403).json({ message: 'You are not a member of this group' });
+    }
+
+    const isUploader = file.uploadedBy.toString() === req.user.id;
+    const isGroupAdmin = membership.role === 'admin';
+
+    if (!isUploader && !isGroupAdmin) {
+      return res.status(403).json({
+        message: 'Permission denied: Only the file uploader or group admin can delete this file',
+      });
+    }
+
+    // Delete from R2
+    if (file.storageKey) {
+      try {
+        await deleteFromR2(file.storageKey);
+      } catch (err) {
+        console.warn('R2 deletion warning:', err.message);
+      }
+    }
+
+    // Delete DB record
+    await File.deleteOne({ _id: file._id });
+
+    // Record activity
+    await Activity.create({
+      userId: req.user.id,
+      groupId: file.groupId,
+      action: 'deleted_file',
+      details: `Deleted "${file.originalName}"`,
+    });
+
     res.json({ success: true, message: 'File deleted successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Error deleting file', error: error.message });
+    console.error('Delete file error:', error);
+    res.status(500).json({ message: error.message || 'Failed to delete file' });
   }
 });
 

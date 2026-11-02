@@ -1,1312 +1,253 @@
-import { fileType, formatDate, sizeInBytes } from "./utils/fileUtils";
-import MyUploadsPage from "./MyUploadsPage";
-import AdminApp from "./admin/AdminApp";
-import { useTheme, type Theme } from "./utils/theme";
-import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  QueryClient,
-  QueryClientProvider,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import {
-  api,
-  getAuthToken,
-  getUserInfo,
-  removeAuthToken,
-  setAuthToken,
-  setUserInfo,
-} from "./services/api";
+import React, { useState, useEffect } from "react";
+import { QueryClient, QueryClientProvider, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, getAuthToken, getUserInfo, removeAuthToken, setUserInfo, User, Group } from "./services/api";
+import { useTheme } from "./utils/theme";
 
-const queryClient = new QueryClient();
-type ViewMode = "grid" | "list";
+// Components & Layout
+import { Sidebar } from "./components/Sidebar";
+import { Navbar } from "./components/Navbar";
+import { CreateGroupModal, JoinGroupModal, UploadModal } from "./components/Modals";
 
-export function Icon({ name, size = 16 }: { name: string; size?: number }) {
-  const paths: Record<string, React.ReactNode> = {
-    book: (
-      <>
-        <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z" />
-        <path d="M4 5.5v15M6.5 18H20" />
-      </>
-    ),
-    bell: (
-      <>
-        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-        <path d="M10 21h4" />
-      </>
-    ),
-    chevron: <path d="m6 9 6 6 6-6" />,
-    folder: (
-      <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h5l2 2h8A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z" />
-    ),
-    search: (
-      <>
-        <circle cx="11" cy="11" r="7" />
-        <path d="m20 20-4-4" />
-      </>
-    ),
-    upload: (
-      <>
-        <path d="M12 16V4M7 9l5-5 5 5" />
-        <path d="M5 15v4h14v-4" />
-      </>
-    ),
-    download: (
-      <>
-        <path d="M12 4v12M7 11l5 5 5-5" />
-        <path d="M5 20h14" />
-      </>
-    ),
-    eye: (
-      <>
-        <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z" />
-        <circle cx="12" cy="12" r="2.5" />
-      </>
-    ),
-    more: (
-      <>
-        <circle cx="5" cy="12" r="1" fill="currentColor" />
-        <circle cx="12" cy="12" r="1" fill="currentColor" />
-        <circle cx="19" cy="12" r="1" fill="currentColor" />
-      </>
-    ),
-    grid: (
-      <>
-        <rect x="4" y="4" width="6" height="6" />
-        <rect x="14" y="4" width="6" height="6" />
-        <rect x="4" y="14" width="6" height="6" />
-        <rect x="14" y="14" width="6" height="6" />
-      </>
-    ),
-    list: (
-      <>
-        <path d="M9 6h11M9 12h11M9 18h11" />
-        <path d="M4 6h.01M4 12h.01M4 18h.01" />
-      </>
-    ),
-    x: (
-      <>
-        <path d="m6 6 12 12M18 6 6 18" />
-      </>
-    ),
-    check: <path d="m5 12 4 4L19 6" />,
-    sun: (
-      <>
-        <circle cx="12" cy="12" r="4" />
-        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-      </>
-    ),
-    moon: <path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5z" />,
-    user: (
-      <>
-        <circle cx="12" cy="8" r="3" />
-        <path d="M5 20a7 7 0 0 1 14 0" />
-      </>
-    ),
-    clock: (
-      <>
-        <circle cx="12" cy="12" r="8" />
-        <path d="M12 7v5l3 2" />
-      </>
-    ),
-    settings: (
-      <>
-        <circle cx="12" cy="12" r="3" />
-        <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-      </>
-    ),
-    trash: (
-      <>
-        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6" />
-      </>
-    ),
-    arrowLeft: (
-      <>
-        <path d="m12 19-7-7 7-7M19 12H5" />
-      </>
-    ),
-    logout: (
-      <>
-        <path d="M10 4H5v16h5M14 8l4 4-4 4M18 12H8" />
-      </>
-    ),
-  };
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      {paths[name]}
-    </svg>
-  );
-}
+// Pages
+import { AuthPage } from "./pages/AuthPage";
+import { DashboardPage } from "./pages/DashboardPage";
+import { GroupsPage } from "./pages/GroupsPage";
+import { GroupWorkspacePage } from "./pages/GroupWorkspacePage";
+import { AllFilesPage } from "./pages/AllFilesPage";
+import { MyUploadsView } from "./pages/MyUploadsView";
+import { SharedWithMePage } from "./pages/SharedWithMePage";
+import { UserProfilePage } from "./pages/UserProfilePage";
+import { SettingsPage } from "./pages/SettingsPage";
 
-function useDebounce(value: string, delay: number) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = window.setTimeout(() => setDebounced(value), delay);
-    return () => window.clearTimeout(timer);
-  }, [value, delay]);
-  return debounced;
-}
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
-function LoginPage({ onLogin, onRegister }: any) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const submit = async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const data = await api.login({ email, password });
-      setAuthToken(data.token);
-      setUserInfo(data.user);
-      onLogin();
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-  return (
-    <div className="auth-page">
-      <div className="auth-brand">
-        <div className="brand-mark">
-          <Icon name="book" />
-        </div>
-        <span>College Files</span>
-        <p>Access your academic resources in seconds.</p>
-      </div>
-      <div className="auth-panel">
-        <div className="auth-card">
-          <h1>Sign in</h1>
-          {error && <div className="error-box">{error}</div>}
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <button
-            className="primary-button full"
-            disabled={!email || !password || loading}
-            onClick={submit}
-          >
-            {loading ? "Signing in..." : "Sign in"}
-          </button>
-          <p className="auth-switch">
-            New student? <button onClick={onRegister}>Create account</button>
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function RegisterPage({ onBack, onDone }: any) {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    rollNo: "",
-    password: "",
-    department: "",
-    semester: "",
-    division: "",
-    batch: "",
-  });
-  const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const { data: hierarchy = [] } = useQuery({
-    queryKey: ["hierarchy"],
-    queryFn: api.getHierarchy,
-  });
-  const update = (key: string, value: string) =>
-    setForm((current) => ({ ...current, [key]: value }));
-  const departments = hierarchy.filter(
-    (item: any) => item.type === "department",
-  );
-  const department = departments.find(
-    (item: any) => item.value === form.department,
-  );
-  const semesters = hierarchy.filter(
-    (item: any) =>
-      item.type === "semester" && item.parentId === department?._id,
-  );
-  const semester = semesters.find((item: any) => item.value === form.semester);
-  const divisions = hierarchy.filter(
-    (item: any) => item.type === "division" && item.parentId === semester?._id,
-  );
-  const division = divisions.find((item: any) => item.value === form.division);
-  const batches = hierarchy.filter(
-    (item: any) => item.type === "batch" && item.parentId === division?._id,
-  );
-  const submit = async () => {
-    try {
-      setLoading(true);
-      setError("");
-      if (!otpSent) {
-        await api.sendOtp(form.email);
-        setOtpSent(true);
-      } else {
-        const data = await api.register({ ...form, otp });
-        setAuthToken(data.token);
-        setUserInfo(data.user);
-        onDone();
-      }
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-  return (
-    <div className="auth-page register-page">
-      <div className="auth-card register-card">
-        <button className="back-link" onClick={onBack}>
-          Back to Login
-        </button>
-        <h1>Create your account</h1>
-        <p className="muted">Please fill out all the information below.</p>
-        {error && <div className="error-box">{error}</div>}
-        {otpSent ? (
-          <input
-            placeholder="Enter 6-digit OTP"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-          />
-        ) : (
-          <div className="register-grid">
-            <input
-              placeholder="Full name"
-              value={form.name}
-              onChange={(e) => update("name", e.target.value)}
-            />
-            <input
-              placeholder="College email"
-              value={form.email}
-              onChange={(e) => update("email", e.target.value)}
-            />
-            <input
-              placeholder="Password"
-              type="password"
-              value={form.password}
-              onChange={(e) => update("password", e.target.value)}
-            />
-            <input
-              placeholder="Roll number"
-              value={form.rollNo}
-              onChange={(e) => update("rollNo", e.target.value)}
-            />
-            <select
-              value={form.department}
-              onChange={(e) => {
-                update("department", e.target.value);
-                update("semester", "");
-              }}
-            >
-              <option value="">Department</option>
-              {departments.map((item: any) => (
-                <option key={item._id} value={item.value}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-            <select
-              value={form.semester}
-              disabled={!form.department}
-              onChange={(e) => {
-                update("semester", e.target.value);
-                update("division", "");
-              }}
-            >
-              <option value="">Semester</option>
-              {semesters.map((item: any) => (
-                <option key={item._id} value={item.value}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-            <select
-              value={form.division}
-              disabled={!form.semester}
-              onChange={(e) => {
-                update("division", e.target.value);
-                update("batch", "");
-              }}
-            >
-              <option value="">Division</option>
-              {divisions.map((item: any) => (
-                <option key={item._id} value={item.value}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-            <select
-              value={form.batch}
-              disabled={!form.division}
-              onChange={(e) => update("batch", e.target.value)}
-            >
-              <option value="">Batch</option>
-              {batches.map((item: any) => (
-                <option key={item._id} value={item.value}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-        <button
-          className="primary-button full"
-          onClick={submit}
-          disabled={loading}
-        >
-          {loading ? "Working..." : otpSent ? "Create account" : "Send OTP"}
-        </button>
-      </div>
-    </div>
-  );
-}
-export function Avatar({ name = "Student" }: { name?: string }) {
-  const initials = name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-  return <div className="avatar">{initials}</div>;
-}
-function UserMenu({
-  user,
-  theme,
-  setTheme,
-  onProfile,
-  onLogout,
-  onClose,
-  onMyUploads,
-}: any) {
-  const [themeOpen, setThemeOpen] = useState(false);
-  return (
-    <div className="user-menu">
-      <div className="menu-user">
-        <Avatar name={user?.name} />
-        <div>
-          <strong>{user?.name || "Student"}</strong>
-          <span>{user?.email || ""}</span>
-        </div>
-      </div>
-      <button
-        onClick={() => {
-          onProfile();
-          onClose();
-        }}
-      >
-        <Icon name="user" size={14} />
-        Profile
-      </button>
-      <button onClick={() => { onClose(); onMyUploads(); }}>
-          <Icon name="clock" size={14} />
-          My Uploads
-        </button>
-      <button>
-        <Icon name="settings" size={14} />
-        Settings
-      </button>
-      <button onClick={() => setThemeOpen((value) => !value)}>
-        <Icon name={theme === "dark" ? "moon" : "sun"} size={14} />
-        <span className="menu-grow">Theme</span>
-        <Icon name="chevron" size={12} />
-      </button>
-      {themeOpen && (
-        <div className="theme-menu">
-          {(["light", "dark", "system"] as Theme[]).map((value) => (
-            <button key={value} onClick={() => setTheme(value)}>
-              {value[0].toUpperCase() + value.slice(1)}
-              {theme === value && <Icon name="check" size={13} />}
-            </button>
-          ))}
-        </div>
-      )}
-      <div className="menu-divider" />
-      <button className="danger" onClick={onLogout}>
-        <Icon name="logout" size={14} />
-        Logout
-      </button>
-    </div>
-  );
-}
-export function Header({ user, theme, setTheme, onProfile, onLogout, onMyUploads, onNavigateHome }: any) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: any) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setMenuOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  return (
-    <header className="app-header">
-      <div className="brand" onClick={onNavigateHome} style={{ cursor: "pointer" }} title="College Files">
-        <div className="brand-mark">
-          <Icon name="book" size={17} />
-        </div>
-        <span>College Files</span>
-      </div>
-      <div className="header-actions" ref={dropdownRef}>
-        <button className="icon-button" title="Notifications">
-          <Icon name="bell" size={18} />
-          <i />
-        </button>
-        <button
-          className="user-trigger"
-          onClick={() => setMenuOpen((value) => !value)}
-        >
-          <Avatar name={user?.name} />
-          <span>{user?.name || "Student"}</span>
-          <Icon name="chevron" size={13} />
-        </button>
-        {menuOpen && (
-          <UserMenu
-            user={user}
-            theme={theme}
-            setTheme={setTheme}
-            onProfile={onProfile}
-            onLogout={onLogout}
-            onMyUploads={onMyUploads}
-            onClose={() => setMenuOpen(false)}
-          />
-        )}
-      </div>
-    </header>
-  );
-}
-export function Sidebar({ spaces, activeSpace, onSelect, onMyUploads }: any) {
-  return (
-    <aside className="sidebar">
-      <p className="eyebrow">Navigation</p>
-      <nav style={{ marginBottom: 14 }}>
-        <button
-          className={
-            activeSpace === "myuploads" ? "space-button active" : "space-button"
-          }
-          onClick={onMyUploads}
-        >
-          <Icon name="clock" size={15} />
-          <span>
-            <strong>My Uploads</strong>
-            <small>Your uploaded files</small>
-          </span>
-        </button>
-      </nav>
-      <p className="eyebrow">My Spaces</p>
-      <nav>
-        {spaces.map((space: any) => (
-          <button
-            key={space.id}
-            className={
-              activeSpace === space.id ? "space-button active" : "space-button"
-            }
-            onClick={() => onSelect(space.id)}
-          >
-            <Icon name="folder" size={15} />
-            <span>
-              <strong>{space.label}</strong>
-              <small>{space.subtitle}</small>
-            </span>
-          </button>
-        ))}
-      </nav>
-    </aside>
-  );
-}
-
-function FileCard({ file, subjectLabel, onPreview, onDownload }: any) {
-  const [label, kind] = fileType(file.type, file.name);
-  return (
-    <article className="file-card" onClick={onPreview} style={{cursor: "pointer"}}>
-      <div className={`file-preview ${kind}`}>
-        <span>{label}</span>
-        <div className="file-hover-actions">
-          <button title="Preview" onClick={(event) => { event.stopPropagation(); onPreview(); }}>
-            <Icon name="eye" size={16} />
-          </button>
-          <button title="Download" onClick={(event) => { event.stopPropagation(); onDownload(); }}>
-            <Icon name="download" size={16} />
-          </button>
-        </div>
-      </div>
-      <div className="file-info">
-        <div className="file-title">
-          <strong title={file.name}>{file.name}</strong>
-          <button title="More" onClick={(e) => { e.stopPropagation(); onPreview(); }}>
-            <Icon name="more" size={14} />
-          </button>
-        </div>
-        <p>
-          <span className={`subject-badge ${kind}`}>
-            {subjectLabel(file.subject)}
-          </span>
-          <em>&middot;</em>
-          <span>{file.uploader}</span>
-        </p>
-        <p>
-          <span>{formatDate(file.uploadedAt)}</span>
-        </p>
-        <p>
-          <span>{file.size}</span>
-        </p>
-      </div>
-    </article>
-  );
-}
-function FileRow({ file, subjectLabel, onPreview, onDownload }: any) {
-  const [label, kind] = fileType(file.type, file.name);
-  return (
-    <div className="file-row" onClick={onPreview} style={{cursor: "pointer"}}>
-      <div className="row-file">
-        <span className={`row-type ${kind}`}>{label}</span>
-        <strong>{file.name}</strong>
-      </div>
-      <span className={`subject-badge ${kind}`}>
-        {subjectLabel(file.subject)}
-      </span>
-      <span className="row-uploader">
-        <Avatar name={file.uploader} />
-        {file.uploader}
-      </span>
-      <span>{formatDate(file.uploadedAt)}</span>
-      <span>{file.size}</span>
-      <div className="row-actions">
-        <button title="Preview" onClick={(e) => { e.stopPropagation(); onPreview(); }}>
-          <Icon name="eye" size={14} />
-        </button>
-        <button title="Download" onClick={(e) => { e.stopPropagation(); onDownload(); }}>
-          <Icon name="download" size={14} />
-        </button>
-        <button title="More" onClick={(e) => { e.stopPropagation(); onPreview(); }}>
-          <Icon name="more" size={14} />
-        </button>
-      </div>
-    </div>
-  );
-}
-export function UploadModal({ space: initialSpace, spaces, subject, subjects, onClose }: any) {
+function MainAppShell() {
   const queryClient = useQueryClient();
-  const [file, setFile] = useState<File | null>(null);
-  const [progress, setProgress] = useState<number | null>(null);
-  const [error, setError] = useState("");
-  const [selectedSpace, setSelectedSpace] = useState(
-    initialSpace && initialSpace !== "myuploads" ? initialSpace : (spaces?.[0]?.id || "")
-  );
-  const [selectedSubject, setSelectedSubject] = useState(
-    subject === "all" ? "" : subject,
-  );
-  const mutation = useMutation({
-    mutationFn: () => api.uploadFile(selectedSpace, selectedSubject, file as File),
-    onSuccess: () => {
-      setProgress(100);
-      queryClient.invalidateQueries({ queryKey: ["files"] });
-      queryClient.invalidateQueries({ queryKey: ["myUploads"] });
-      window.setTimeout(onClose, 500);
-    },
-    onError: (e: any) => {
-      setError(e.message);
-      setProgress(null);
-    },
+  const { theme, setTheme, isDark } = useTheme();
+
+  // Authentication State
+  const [user, setUser] = useState<User | null>(() => getUserInfo());
+
+  // Routing State
+  const [currentPath, setCurrentPath] = useState<string>(() => {
+    return window.location.pathname || "/dashboard";
   });
-  return (
-    <div className="modal-backdrop">
-      <div className="dialog">
-        <div className="dialog-header">
-          <div>
-            <h2>Upload file</h2>
-            <p>
-              {selectedSpace && selectedSubject
-                ? `${selectedSpace} -> ${selectedSubject}`
-                : "Choose destination and subject below"}
-            </p>
-          </div>
-          <button onClick={onClose}>
-            <Icon name="x" />
-          </button>
-        </div>
-        {(!initialSpace || initialSpace === "myuploads") && spaces && spaces.length > 0 && (
-          <select
-            value={selectedSpace}
-            onChange={(e) => setSelectedSpace(e.target.value)}
-            style={{ marginBottom: 10 }}
-          >
-            {spaces.map((sp: any) => (
-              <option key={sp.id} value={sp.id}>
-                Destination: {sp.label}
-              </option>
-            ))}
-          </select>
-        )}
-        {subject === "all" && (
-          <select
-            value={selectedSubject}
-            onChange={(e) => setSelectedSubject(e.target.value)}
-          >
-            <option value="">Select subject</option>
-            {subjects
-              .filter((item: any) => item.id !== "all")
-              .map((item: any) => (
-                <option key={item.id} value={item.id}>
-                  {item.label}
-                </option>
-              ))}
-          </select>
-        )}
-        {error && <div className="error-box">{error}</div>}
-        <label className="drop-zone">
-          <input
-            type="file"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-          />
-          <Icon name="upload" size={22} />
-          <strong>{file ? file.name : "Drop your file here"}</strong>
-          <span>
-            {file
-              ? `${file.type || "File"} Ã‚Â· ${(file.size / 1024 / 1024).toFixed(2)} MB`
-              : "or choose a file"}
-          </span>
-          <small>PDF, DOCX, PPTX, XLSX, images - up to 50 MB</small>
-        </label>
-        {progress !== null && (
-          <div className="progress">
-            <div style={{ width: `${progress}%` }} />
-            <span>{progress}% uploaded</span>
-          </div>
-        )}
-        <div className="dialog-actions">
-          <button className="secondary-button" onClick={onClose}>
-            Cancel
-          </button>
-          <button
-            className="primary-button"
-            disabled={!file || !selectedSubject || mutation.isPending}
-            onClick={() => {
-              setProgress(0);
-              mutation.mutate();
-            }}
-          >
-            Upload
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-export function PreviewModal({ file, subjectLabel, onClose }: any) {
-  const [label] = fileType(file.type, file.name);
-  const isPdf = file.type.toLowerCase().includes("pdf");
-  const isImage =
-    file.type.toLowerCase().includes("image") ||
-    /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name);
-  const downloadUrl = api.getDownloadUrl(file._id);
-  const formatSpace = (s: string) => {
-    if (s === "e2") return "E2";
-    if (s === "edivision") return "E Division";
-    return s;
-  };
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="preview-dialog" onClick={(e) => e.stopPropagation()}>
-        <header className="preview-header">
-          <button className="preview-close-btn" onClick={onClose}>
-            <Icon name="x" size={20} /> <span style={{fontWeight: 500}}>Close</span>
-          </button>
-          <div className="preview-name">
-            <span className={`row-type file ${label}`}>{label}</span>
-            <strong>{file.name}</strong>
-            <span className={`subject-badge file ${label}`}>
-              {subjectLabel(file.subject)}
-            </span>
-          </div>
-          <button
-            className="primary-button download-btn-polished"
-            onClick={() => window.open(downloadUrl, "_blank")}
-          >
-            <Icon name="download" size={16} /> Download File
-          </button>
-        </header>
-        <div className="preview-body">
-          <div className="document-area">
-            {isPdf ? (
-              <iframe src={downloadUrl} title={file.name} />
-            ) : isImage ? (
-              <img src={downloadUrl} alt={file.name} />
-            ) : (
-              <div className="unavailable">
-                <span className="row-type file">{label}</span>
-                <h2>Preview unavailable</h2>
-                <p>
-                  This file type cannot currently be previewed in the browser.
-                </p>
-                <button
-                  className="primary-button"
-                  onClick={() => window.open(downloadUrl, "_blank")}
-                >
-                  Download file
-                </button>
-              </div>
-            )}
-          </div>
-          <aside className="file-details">
-            <p className="eyebrow">File info</p>
-            <strong>{file.name}</strong>
-            <dl>
-              <dt>Uploaded by</dt>
-              <dd>{file.uploader}</dd>
-              <dt>Date</dt>
-              <dd>{formatDate(file.uploadedAt)}</dd>
-              <dt>Subject</dt>
-              <dd>{subjectLabel(file.subject)}</dd>
-              <dt>Space</dt>
-              <dd>{formatSpace(file.space)}</dd>
-              <dt>Size</dt>
-              <dd>{file.size}</dd>
-              <dt>Type</dt>
-              <dd>{file.type}</dd>
-            </dl>
-          </aside>
-        </div>
-      </div>
-    </div>
-  );
-}
-export function ProfileModal({ user, onClose }: any) {
-  return (
-    <div className="modal-backdrop">
-      <div className="profile-dialog">
-        <div className="dialog-header">
-          <h2>Profile</h2>
-          <button onClick={onClose}>
-            <Icon name="x" />
-          </button>
-        </div>
-        <div className="profile-heading">
-          <Avatar name={user?.name} />
-          <div>
-            <strong>{user?.name}</strong>
-            <span>{user?.email}</span>
-          </div>
-        </div>
-        <dl>
-          <dt>Department</dt>
-          <dd>{user?.department ? user.department.toUpperCase() : "-"}</dd>
-          <dt>Semester</dt>
-          <dd>{user?.semester ? user.semester.toUpperCase() : "-"}</dd>
-          <dt>Division</dt>
-          <dd>{user?.division ? (user.division.toLowerCase() === "edivision" ? "E Division" : user.division.toUpperCase()) : "-"}</dd>
-          <dt>Batch</dt>
-          <dd>{user?.batch ? user.batch.toUpperCase() : "-"}</dd>
-        </dl>
-      </div>
-    </div>
-  );
-}
-function Dashboard({ space, spaceLabel, subjects, onPreview }: any) {
-  const [subject, setSubject] = useState("all");
-  const [query, setQuery] = useState("");
-  const [sort, setSort] = useState("date");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-  const [view, setView] = useState<"grid" | "list">("grid");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState("");
+
+  // Global Modals State
+  const [createGroupOpen, setCreateGroupOpen] = useState(false);
+  const [joinGroupOpen, setJoinGroupOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [sortOpen, setSortOpen] = useState(false);
-  const sortRef = useRef<HTMLDivElement>(null);
-  
-  useEffect(() => {
-    function handleClickOutside(event: any) {
-      if (sortRef.current && !sortRef.current.contains(event.target)) {
-        setSortOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
-  const debouncedQuery = useDebounce(query, 400);
-  const { data: files = [], isLoading } = useQuery({
-    queryKey: ["files", space, "all", debouncedQuery],
-    queryFn: () => space === "myuploads" ? api.getMyUploads() : api.getFiles(space, "all", debouncedQuery),
-    enabled: Boolean(space),
-  });
-
-  const subjectLabel = (id: string) =>
-    subjects.find((item: any) => item.id === id)?.label || id;
-  const counts = subjects.reduce(
-    (result: Record<string, number>, item: any) => {
-      result[item.id] =
-        item.id === "all"
-          ? files.length
-          : files.filter((file: any) => file.subject === item.id).length;
-      return result;
-    },
-    {},
-  );
-
-  const visibleFiles = useMemo(() => {
-    const filtered =
-      subject === "all"
-        ? files
-        : files.filter((file: any) => file.subject === subject);
-    return [...filtered].sort((a: any, b: any) => {
-      let comparison = 0;
-      if (sort === "name") {
-        comparison = a.name.localeCompare(b.name);
-      } else if (sort === "subject") {
-        comparison = subjectLabel(a.subject).localeCompare(subjectLabel(b.subject));
-      } else if (sort === "size") {
-        comparison = sizeInBytes(b.size) - sizeInBytes(a.size);
-      } else {
-        comparison = new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime();
-      }
-      return sortDirection === "asc" ? -comparison : comparison;
-    });
-  }, [files, subject, sort, sortDirection, subjects]);
-
-  return (
-    <>
-      {uploadOpen && (
-        <UploadModal
-          space={space}
-          subject={subject}
-          subjects={subjects}
-          onClose={() => setUploadOpen(false)}
-        />
-      )}
-      <div className="dashboard">
-        <section className="space-heading">
-          <div>
-            <h1>{spaceLabel}</h1>
-            <p>
-              {space === "myuploads" ? "Manage all the files you have uploaded" : `Files shared with ${spaceLabel === "E2" ? "E2 batch" : spaceLabel}`}
-            </p>
-          </div>
-          <button
-            className="primary-button"
-            onClick={() => setUploadOpen(true)}
-          >
-            <Icon name="upload" size={14} /> Upload
-          </button>
-        </section>
-        <div className="subject-tabs">
-          {subjects.map((item: any) => (
-            <button
-              key={item.id}
-              className={
-                subject === item.id ? "subject-tab active" : "subject-tab"
-              }
-              onClick={() => setSubject(item.id)}
-            >
-              {item.label}
-              <span>{counts[item.id] ?? 0}</span>
-            </button>
-          ))}
-        </div>
-        <section className="toolbar">
-          <label className="search-box">
-            <Icon name="search" size={14} />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={`Search ${subject === "all" ? "files" : `${subjectLabel(subject)} files`}...`}
-            />
-            {query && (
-              <button onClick={() => setQuery("")}>
-                <Icon name="x" size={12} />
-              </button>
-            )}
-          </label>
-          <div className="sort-wrap" ref={sortRef}>
-              <button
-                className="control-button"
-                onClick={() => setSortOpen((value) => !value)}
-              >
-                Sort:{" "}
-                {sort === "date"
-                  ? "Date"
-                  : sort === "name"
-                    ? "Name"
-                    : sort === "size"
-                      ? "Size"
-                      : "Subject"}
-                <Icon name="chevron" size={12} />
-              </button>
-              {sortOpen && (
-                <div className="sort-menu">
-                  <div className="sort-menu-header">Sort by</div>
-                  {[
-                    ["date", "Date uploaded"],
-                    ["name", "Name"],
-                    ["size", "File size"],
-                    ["subject", "Subject"],
-                  ]
-                    .filter(([key]) => key !== "subject" || subject === "all")
-                    .map(([key, label]) => (
-                      <button
-                        key={key}
-                        onClick={() => {
-                          setSort(key);
-                          setSortOpen(false);
-                        }}
-                      >
-                        {label}
-                        {sort === key && <Icon name="check" size={12} />}
-                      </button>
-                    ))}
-                  <div className="sort-menu-header">Order</div>
-                  <button onClick={() => { setSortDirection("asc"); setSortOpen(false); }}>
-                    Ascending {sortDirection === "asc" && <Icon name="check" size={12} />}
-                  </button>
-                  <button onClick={() => { setSortDirection("desc"); setSortOpen(false); }}>
-                    Descending {sortDirection === "desc" && <Icon name="check" size={12} />}
-                  </button>
-                </div>
-              )}
-            </div>
-            <span className="file-count">
-              {visibleFiles.length} {visibleFiles.length === 1 ? "file" : "files"}
-            </span>
-          <div className="view-toggle">
-            <button
-              className={view === "grid" ? "active" : ""}
-              onClick={() => setView("grid")}
-              title="Grid view"
-            >
-              <Icon name="grid" size={14} />
-            </button>
-            <button
-              className={view === "list" ? "active" : ""}
-              onClick={() => setView("list")}
-              title="List view"
-            >
-              <Icon name="list" size={14} />
-            </button>
-          </div>
-        </section>
-        <div className="file-area">
-          {isLoading ? (
-            <div className="empty-state">Loading files...</div>
-          ) : visibleFiles.length === 0 ? (
-            <div className="empty-state">
-              <Icon name="search" size={24} />
-              <strong>
-                {query ? `No files match \"${query}\"` : "No files yet"}
-              </strong>
-              <span>
-                {query
-                  ? "Try a different filename or clear the search."
-                  : "Files uploaded to this space will appear here."}
-              </span>
-            </div>
-          ) : view === "grid" ? (
-            <div className="file-grid">
-              {visibleFiles.map((file: any) => (
-                <FileCard
-                  key={file._id}
-                  file={file}
-                  subjectLabel={subjectLabel}
-                  onPreview={() => onPreview(file)}
-                  onDownload={() =>
-                    window.open(api.getDownloadUrl(file._id), "_blank")
-                  }
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="file-list">
-              <div className="list-header">
-                <span>File</span>
-                <span>Subject</span>
-                <span>Uploaded by</span>
-                <span>Date</span>
-                <span>Size</span>
-                <span />
-              </div>
-              {visibleFiles.map((file: any) => (
-                <FileRow
-                  key={file._id}
-                  file={file}
-                  subjectLabel={subjectLabel}
-                  onPreview={() => onPreview(file)}
-                  onDownload={() =>
-                    window.open(api.getDownloadUrl(file._id), "_blank")
-                  }
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </>
-  );
-}
-function MainApp({ onLogout, onNavigate }: any) {
-  const { theme, setTheme, isDark, systemDark } = useTheme();
-  const [space, setSpace] = useState("");
-  const [previewFile, setPreviewFile] = useState<any>(null);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const {
-    data: userData,
-    isLoading: userLoading,
-    isError,
-  } = useQuery({ queryKey: ["me"], queryFn: api.getMe });
-  const { data: hierarchy = [], isLoading: hierarchyLoading } = useQuery({
-    queryKey: ["hierarchy"],
-    queryFn: api.getHierarchy,
-  });
-  const { data: publicSubjects = [], isLoading: subjectsLoading } = useQuery({
-    queryKey: ["publicSubjects"],
-    queryFn: api.getPublicSubjects,
-  });
-  const user = userData || getUserInfo();
-  useEffect(() => {
-    if (isError) onLogout();
-  }, [isError, onLogout]);
-
-  const spaces = useMemo(
-    () =>
-      (user?.spaces || []).map((value: string) => {
-        const node = hierarchy.find((item: any) => item.value === value);
-        return {
-          id: value,
-          label: node?.name || value,
-          subtitle:
-            node?.type === "batch" ? "Batch files" : "Division-wide files",
-        };
-      }),
-    [user, hierarchy],
-  );
-  const spaceStorageKey = user?.email
-    ? `college-files:last-space:${user.email}`
-    : "";
-  useEffect(() => {
-    if (!spaces.length) return;
-    const savedSpace = spaceStorageKey
-      ? localStorage.getItem(spaceStorageKey)
-      : null;
-    const path = window.location.pathname;
-    const initialSpace = path === "/myuploads" ? "myuploads" : savedSpace && spaces.some((item: any) => item.id === savedSpace) ? savedSpace : spaces[0].id;
-    const nextSpace = initialSpace;
-      if (!space || (space !== "myuploads" && !spaces.some((item: any) => item.id === space))) {
-        setSpace(nextSpace);
-      }
-
-      const handlePopState = () => {
-        const path = window.location.pathname;
-        if (path === "/myuploads") {
-          setSpace("myuploads");
-        } else {
-          const sSpace = spaceStorageKey ? localStorage.getItem(spaceStorageKey) : null;
-          setSpace(sSpace && spaces.some((item: any) => item.id === sSpace) ? sSpace : spaces[0]?.id);
-        }
-      };
-      window.addEventListener("popstate", handlePopState);
-      return () => window.removeEventListener("popstate", handlePopState);
-  }, [space, spaceStorageKey, spaces]);
-  const selectSpace = (nextSpace: string) => {
-    window.history.pushState({}, "", nextSpace === "myuploads" ? "/myuploads" : "/");
-    setSpace(nextSpace);
-    if (spaceStorageKey) localStorage.setItem(spaceStorageKey, nextSpace);
-  };
-  const subjects = useMemo(() => {
-    const department = hierarchy.find(
-      (item: any) => item.value === user?.department,
-    );
-    const semester = hierarchy.find(
-      (item: any) => item.value === user?.semester,
-    );
-    const allowed = publicSubjects.filter(
-      (item: any) =>
-        item.departmentId === department?._id &&
-        item.semesterId === semester?._id,
-    );
-    return [
-      { id: "all", label: "All" },
-      ...allowed.map((item: any) => ({ id: item._id, label: item.shortName })),
-    ];
-  }, [publicSubjects, hierarchy, user]);
-  const currentSpace = space === "myuploads" ? { id: "myuploads", label: "My Uploads" } : spaces.find((item: any) => item.id === space);
-  const rootClass = isDark ? "app-shell dark" : "app-shell";
-  const dashboardReady =
-    !userLoading && !hierarchyLoading && !subjectsLoading && currentSpace;
-  return (
-    <div className={rootClass}>
-      <Header
-          user={user}
-          theme={theme}
-          setTheme={setTheme}
-          onProfile={() => setProfileOpen((prev) => !prev)}
-          onLogout={onLogout}
-          onMyUploads={() => onNavigate("/myuploads")}
-          onNavigateHome={() => onNavigate("/")}
-        />
-      <div className="app-body">
-        <Sidebar spaces={spaces} activeSpace={space} onSelect={selectSpace} onMyUploads={() => onNavigate("/myuploads")} />
-        <main className="main-content">
-          {dashboardReady ? (
-            <Dashboard
-              space={space}
-              spaceLabel={currentSpace.label}
-              subjects={subjects}
-              onPreview={setPreviewFile}
-            />
-          ) : (
-            <div className="dashboard-loading">
-              <div className="loading-mark">
-                <Icon name="book" size={18} />
-              </div>
-              <strong>Loading your spaces</strong>
-              <span>Connecting to your authorized files...</span>
-            </div>
-          )}
-        </main>
-      </div>
-      {profileOpen && (
-        <ProfileModal user={user} onClose={() => setProfileOpen(false)} />
-      )}
-      {previewFile && (
-        <PreviewModal
-          file={previewFile}
-          subjectLabel={(id: string) =>
-            subjects.find((item: any) => item.id === id)?.label || id
-          }
-          onClose={() => setPreviewFile(null)}
-        />
-      )}
-    </div>
-  );
-}
-function App() {
-  useTheme();
-  const user = getUserInfo();
-  const [view, setView] = useState(() => {
-    const token = getAuthToken();
-    if (!token) return "login";
-    if (user?.role === "admin") return "admin";
-    if (window.location.pathname === "/myuploads") return "myuploads";
-    return "app";
-  });
-
-  const navigate = (path: string, spaceId?: string) => {
+  // Sync route with browser history
+  const navigate = (path: string) => {
     window.history.pushState({}, "", path);
-    if (path === "/myuploads") {
-      setView("myuploads");
-    } else {
-      if (spaceId && user?.email) {
-        localStorage.setItem(`college-files:last-space:${user.email}`, spaceId);
-      }
-      setView("app");
-    }
+    setCurrentPath(path);
+    window.scrollTo(0, 0);
   };
 
   useEffect(() => {
     const handlePopState = () => {
-      const token = getAuthToken();
-      const user = getUserInfo();
-      if (!token) {
-        setView("login");
-        return;
-      }
-      if (user?.role === "admin") {
-        setView("admin");
-        return;
-      }
-      if (window.location.pathname === "/myuploads") {
-        setView("myuploads");
-      } else {
-        setView("app");
-      }
+      setCurrentPath(window.location.pathname || "/dashboard");
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  const logout = () => {
-    removeAuthToken();
-    queryClient.clear();
-    setView("login");
-  };
-
+  // Listen to 401 unauthorized
   useEffect(() => {
     const handleUnauthorized = () => {
-      logout();
+      removeAuthToken();
+      localStorage.removeItem("user");
+      setUser(null);
+      navigate("/auth");
     };
     window.addEventListener("auth:unauthorized", handleUnauthorized);
     return () => window.removeEventListener("auth:unauthorized", handleUnauthorized);
   }, []);
 
-  if (view === "login")
+  // Logout handler
+  const handleLogout = () => {
+    removeAuthToken();
+    localStorage.removeItem("user");
+    setUser(null);
+    queryClient.clear();
+    navigate("/auth");
+  };
+
+  // Groups Query
+  const { data: groups = [] } = useQuery({
+    queryKey: ["groups"],
+    queryFn: api.getGroups,
+    enabled: !!user && !!getAuthToken(),
+  });
+
+  // Create Group Mutation
+  const createGroupMutation = useMutation({
+    mutationFn: (data: { name: string; description: string }) => api.createGroup(data),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["groups"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      navigate(`/groups/${res.group.id || res.group._id}`);
+    },
+  });
+
+  // Join Group Mutation
+  const joinGroupMutation = useMutation({
+    mutationFn: (inviteCode: string) => api.joinGroup(inviteCode),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["groups"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      navigate(`/groups/${res.group.id || res.group._id}`);
+    },
+  });
+
+  // If user is not authenticated, show AuthPage
+  if (!user || !getAuthToken()) {
     return (
-      <LoginPage
-        onLogin={() => {
-          const user = getUserInfo();
-          if (user?.role === "admin") setView("admin");
-          else if (window.location.pathname === "/myuploads") setView("myuploads");
-          else setView("app");
+      <AuthPage
+        onAuthSuccess={(authUser) => {
+          setUser(authUser);
+          navigate("/dashboard");
         }}
-        onRegister={() => setView("register")}
       />
     );
-  if (view === "register")
-    return (
-      <RegisterPage
-        onBack={() => setView("login")}
-        onDone={() => {
-          if (window.location.pathname === "/myuploads") setView("myuploads");
-          else setView("app");
-        }}
-      />
-    );
-  if (view === "admin") return <AdminApp onLogout={logout} />;
-  if (view === "myuploads") {
-    return <MyUploadsPage onLogout={logout} onNavigate={navigate} />;
   }
-  return <MainApp onLogout={logout} onNavigate={navigate} />;
-}
-export default function AppWrapper() {
+
+  // Parse path for dynamic routes: e.g. /groups/:id or /users/:id
+  const matchGroup = currentPath.match(/^\/groups\/([a-zA-Z0-9_-]+)$/);
+  const matchUser = currentPath.match(/^\/users\/([a-zA-Z0-9_-]+)$/);
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
+    <div className={`app-shell ${isDark ? "dark" : ""}`}>
+      {/* Fixed Left Sidebar */}
+      <Sidebar
+        currentPath={currentPath}
+        onNavigate={navigate}
+        onLogout={handleLogout}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+
+      {/* Main Layout Area */}
+      <div className="fileshare-main-wrapper">
+        {/* Top Navbar */}
+        <Navbar
+          user={user}
+          searchQuery={globalSearch}
+          onSearchChange={setGlobalSearch}
+          onNavigate={navigate}
+          onLogout={handleLogout}
+          isDark={isDark}
+          onToggleTheme={() => setTheme(isDark ? "light" : "dark")}
+          onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
+          onOpenUpload={() => setUploadOpen(true)}
+        />
+
+        {/* Dynamic Route View */}
+        <main className="fileshare-view-content">
+          {matchGroup ? (
+            <GroupWorkspacePage
+              groupId={matchGroup[1]}
+              onBack={() => navigate("/groups")}
+              onNavigateUser={(userId) => navigate(`/users/${userId}`)}
+            />
+          ) : matchUser ? (
+            <UserProfilePage
+              userId={matchUser[1]}
+              onBack={() => navigate("/groups")}
+              onSelectGroup={(groupId) => navigate(`/groups/${groupId}`)}
+            />
+          ) : currentPath === "/groups" ? (
+            <GroupsPage
+              onSelectGroup={(groupId) => navigate(`/groups/${groupId}`)}
+              onOpenCreateGroup={() => setCreateGroupOpen(true)}
+              onOpenJoinGroup={() => setJoinGroupOpen(true)}
+            />
+          ) : currentPath === "/files" ? (
+            <AllFilesPage
+              groups={groups}
+              onOpenUpload={() => setUploadOpen(true)}
+              onNavigateUser={(userId) => navigate(`/users/${userId}`)}
+            />
+          ) : currentPath === "/my-uploads" ? (
+            <MyUploadsView
+              groups={groups}
+              onOpenUpload={() => setUploadOpen(true)}
+              onNavigateUser={(userId) => navigate(`/users/${userId}`)}
+            />
+          ) : currentPath === "/shared-with-me" ? (
+            <SharedWithMePage
+              groups={groups}
+              onNavigateUser={(userId) => navigate(`/users/${userId}`)}
+            />
+          ) : currentPath === "/profile" || currentPath === "/settings" ? (
+            <SettingsPage
+              user={user}
+              onUpdateUser={(updated) => {
+                setUser(updated);
+                setUserInfo(updated);
+              }}
+              theme={theme}
+              onSetTheme={(t) => setTheme(t)}
+            />
+          ) : (
+            <DashboardPage
+              user={user}
+              onNavigate={navigate}
+              onOpenCreateGroup={() => setCreateGroupOpen(true)}
+              onOpenJoinGroup={() => setJoinGroupOpen(true)}
+              onOpenUpload={() => setUploadOpen(true)}
+            />
+          )}
+        </main>
+      </div>
+
+      {/* Global Modals */}
+      <CreateGroupModal
+        isOpen={createGroupOpen}
+        onClose={() => setCreateGroupOpen(false)}
+        onCreate={(name, description) => createGroupMutation.mutateAsync({ name, description })}
+      />
+
+      <JoinGroupModal
+        isOpen={joinGroupOpen}
+        onClose={() => setJoinGroupOpen(false)}
+        onJoin={(code) => joinGroupMutation.mutateAsync(code)}
+      />
+
+      <UploadModal
+        isOpen={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        groups={groups}
+        defaultGroupId={matchGroup ? matchGroup[1] : groups[0]?.id}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+          queryClient.invalidateQueries({ queryKey: ["all-files"] });
+          queryClient.invalidateQueries({ queryKey: ["my-uploads"] });
+          queryClient.invalidateQueries({ queryKey: ["shared-with-me"] });
+          if (matchGroup) {
+            queryClient.invalidateQueries({ queryKey: ["group-files", matchGroup[1]] });
+            queryClient.invalidateQueries({ queryKey: ["group", matchGroup[1]] });
+          }
+        }}
+      />
+    </div>
   );
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <MainAppShell />
+    </QueryClientProvider>
+  );
+}

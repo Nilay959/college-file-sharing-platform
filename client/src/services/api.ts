@@ -1,18 +1,111 @@
 const API_URL = 'http://localhost:5000/api';
 
+export interface User {
+  id: string;
+  _id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  role?: string;
+  createdAt?: string;
+}
+
+export interface Group {
+  id: string;
+  _id: string;
+  name: string;
+  description?: string;
+  inviteCode: string;
+  createdBy?: any;
+  createdAt?: string;
+  role?: 'admin' | 'member';
+  memberCount?: number;
+  fileCount?: number;
+}
+
+export interface GroupMemberItem {
+  _id: string;
+  memberId: string;
+  userId: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  role: 'admin' | 'member';
+  joinedAt: string;
+}
+
+export interface FileItem {
+  id: string;
+  _id: string;
+  originalName: string;
+  fileSize: number;
+  size: string;
+  mimeType: string;
+  uploadedBy: {
+    _id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  };
+  groupId: {
+    _id: string;
+    name: string;
+    inviteCode: string;
+  };
+  storageKey?: string;
+  createdAt: string;
+  canDelete?: boolean;
+}
+
+export interface ActivityItem {
+  _id: string;
+  userId: {
+    _id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  };
+  groupId: {
+    _id: string;
+    name: string;
+    inviteCode?: string;
+  };
+  fileId?: {
+    _id: string;
+    originalName: string;
+    mimeType: string;
+    fileSize: number;
+  } | null;
+  action: 'created_group' | 'joined_group' | 'uploaded_file' | 'deleted_file' | 'removed_member';
+  details?: string;
+  createdAt: string;
+}
+
+export interface DashboardStats {
+  totalGroups: number;
+  totalMembers: number;
+  totalFiles: number;
+  recentActivity: ActivityItem[];
+}
+
 export const getAuthToken = () => localStorage.getItem('token');
 export const setAuthToken = (token: string) => localStorage.setItem('token', token);
 export const removeAuthToken = () => localStorage.removeItem('token');
-export const getUserInfo = () => JSON.parse(localStorage.getItem('user') || 'null');
+export const getUserInfo = (): User | null => {
+  try {
+    return JSON.parse(localStorage.getItem('user') || 'null');
+  } catch {
+    return null;
+  }
+};
 export const setUserInfo = (user: any) => localStorage.setItem('user', JSON.stringify(user));
 
-const authHeaders = (): any => {
+const authHeaders = (): Record<string, string> => {
   const token = getAuthToken();
-  return token ? { 'Authorization': `Bearer ${token}` } : {};
+  return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-
-async function getError(res: Response) {
+async function getError(res: Response): Promise<string> {
   if (res.status === 401) {
     removeAuthToken();
     localStorage.removeItem('user');
@@ -21,180 +114,227 @@ async function getError(res: Response) {
   try {
     const data = await res.json();
     return data.message || JSON.stringify(data);
-  } catch (e) {
+  } catch {
     return await res.text();
   }
 }
 
-const getHeaders = () => ({ ...authHeaders(), "Content-Type": "application/json" });
+const getHeaders = () => ({ ...authHeaders(), 'Content-Type': 'application/json' });
+
 export const api = {
-  // Admin Endpoints
-  getAdminStats: async () => {
-    const res = await fetch(`${API_URL}/admin/dashboard`, { headers: getHeaders() });
+  // Authentication
+  login: async (credentials: { email: string; password: string }): Promise<{ token: string; user: User }> => {
+    const res = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials),
+    });
     if (!res.ok) throw new Error(await getError(res));
     return res.json();
   },
-  getSubjectsAdmin: async () => {
-    const res = await fetch(`${API_URL}/admin/subjects`, { headers: getHeaders() });
+
+  register: async (userData: { name: string; email: string; password: string; avatar?: string }): Promise<{ token: string; user: User }> => {
+    const res = await fetch(`${API_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData),
+    });
     if (!res.ok) throw new Error(await getError(res));
     return res.json();
   },
-  createSubject: async (data: any) => {
-    const res = await fetch(`${API_URL}/admin/subjects`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) });
-    if (!res.ok) throw new Error(await getError(res));
-    return res.json();
-  },
-  updateSubject: async (id: string, data: any) => {
-    const res = await fetch(`${API_URL}/admin/subjects/${id}`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(data) });
-    if (!res.ok) throw new Error(await getError(res));
-    return res.json();
-  },
-  deleteSubject: async (id: string) => {
-    const res = await fetch(`${API_URL}/admin/subjects/${id}`, { method: 'DELETE', headers: getHeaders() });
-    if (!res.ok) throw new Error(await getError(res));
-    return res.json();
-  },
-  deleteHierarchy: async (id: string) => {
-    const res = await fetch(`${API_URL}/admin/hierarchy/${id}`, { method: 'DELETE', headers: getHeaders() });
-    if (!res.ok) throw new Error(await getError(res));
-    return res.json();
-  },
-  createHierarchy: async (data: any) => {
-    const res = await fetch(`${API_URL}/admin/hierarchy`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) });
-    if (!res.ok) throw new Error(await getError(res));
-    return res.json();
-  },
-  updateHierarchy: async (id: string, data: any) => {
-    const res = await fetch(`${API_URL}/admin/hierarchy/${id}`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(data) });
-    if (!res.ok) throw new Error(await getError(res));
-    return res.json();
-  },
-  getUsers: async () => {
-    const res = await fetch(`${API_URL}/admin/users`, { headers: getHeaders() });
-    if (!res.ok) throw new Error(await getError(res));
-    return res.json();
-  },
-  deleteUser: async (id: string) => {
-    const res = await fetch(`${API_URL}/admin/users/${id}`, { method: 'DELETE', headers: getHeaders() });
-    if (!res.ok) throw new Error(await getError(res));
-    return res.json();
-  },
-  updateUserStatus: async (id: string, isActive: boolean) => {
-    const res = await fetch(`${API_URL}/admin/users/${id}/status`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify({ isActive }) });
-    if (!res.ok) throw new Error(await getError(res));
-    return res.json();
-  },
-  getAdminFiles: async () => {
-    const res = await fetch(`${API_URL}/admin/files`, { headers: getHeaders() });
-    if (!res.ok) throw new Error(await getError(res));
-    return res.json();
-  },
-  deleteFileAdmin: async (id: string) => {
-    const res = await fetch(`${API_URL}/admin/files/${id}`, { method: 'DELETE', headers: getHeaders() });
-    if (!res.ok) throw new Error(await getError(res));
-    return res.json();
-  },
-  getDomains: async () => {
-    const res = await fetch(`${API_URL}/admin/domains`, { headers: getHeaders() });
-    if (!res.ok) throw new Error(await getError(res));
-    return res.json();
-  },
-  createDomain: async (data: any) => {
-    const res = await fetch(`${API_URL}/admin/domains`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) });
-    if (!res.ok) throw new Error(await getError(res));
-    return res.json();
-  },
-  deleteDomain: async (id: string) => {
-    const res = await fetch(`${API_URL}/admin/domains/${id}`, { method: 'DELETE', headers: getHeaders() });
-    if (!res.ok) throw new Error(await getError(res));
-    return res.json();
-  },
-  getPublicSubjects: async () => {
-    const res = await fetch(`${API_URL}/subjects`);
-    if (!res.ok) throw new Error(await getError(res));
-    return res.json();
-  },
-  getMe: async () => {
+
+  getMe: async (): Promise<User> => {
     const res = await fetch(`${API_URL}/auth/me`, { headers: getHeaders() });
     if (!res.ok) throw new Error(await getError(res));
     return res.json();
   },
 
-  getHierarchy: async () => {
-    const res = await fetch(`${API_URL}/hierarchy`);
+  updateProfile: async (data: { name?: string; avatar?: string; password?: string }): Promise<{ token: string; user: User }> => {
+    const res = await fetch(`${API_URL}/auth/profile`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
     if (!res.ok) throw new Error(await getError(res));
     return res.json();
   },
 
+  // Groups
+  getGroups: async (): Promise<Group[]> => {
+    const res = await fetch(`${API_URL}/groups`, { headers: getHeaders() });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
 
-  login: async (credentials: any) => {
-    const res = await fetch(`${API_URL}/auth/login`, {
+  getGroup: async (groupId: string): Promise<Group> => {
+    const res = await fetch(`${API_URL}/groups/${groupId}`, { headers: getHeaders() });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  createGroup: async (data: { name: string; description?: string }): Promise<{ group: Group }> => {
+    const res = await fetch(`${API_URL}/groups`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(credentials)
+      headers: getHeaders(),
+      body: JSON.stringify(data),
     });
     if (!res.ok) throw new Error(await getError(res));
     return res.json();
   },
-  sendOtp: async (email: string) => {
-    const res = await fetch(`${API_URL}/auth/send-otp`, {
+
+  joinGroup: async (inviteCode: string): Promise<{ message: string; group: Group }> => {
+    const res = await fetch(`${API_URL}/groups/join`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    });
-    if (!res.ok) throw new Error((await res.json()).message);
-    return res.json();
-  },
-  register: async (userData: any) => {
-    const res = await fetch(`${API_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData)
+      headers: getHeaders(),
+      body: JSON.stringify({ inviteCode }),
     });
     if (!res.ok) throw new Error(await getError(res));
     return res.json();
   },
-  getFiles: async (spaceId: string, subjectId: string, search: string) => {
-    const query = new URLSearchParams();
-    if (subjectId) query.append('subjectId', subjectId);
-    if (search) query.append('search', search);
-    
-    const res = await fetch(`${API_URL}/files/${spaceId}?${query.toString()}`, {
-      headers: { ...authHeaders() }
+
+  getGroupMembers: async (groupId: string): Promise<GroupMemberItem[]> => {
+    const res = await fetch(`${API_URL}/groups/${groupId}/members`, { headers: getHeaders() });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  removeGroupMember: async (groupId: string, userId: string): Promise<{ success: boolean; message: string }> => {
+    const res = await fetch(`${API_URL}/groups/${groupId}/members/${userId}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
     });
     if (!res.ok) throw new Error(await getError(res));
     return res.json();
   },
-  uploadFile: async (spaceId: string, subjectId: string, file: File) => {
+
+  updateGroup: async (groupId: string, data: { name?: string; description?: string }): Promise<{ group: Group }> => {
+    const res = await fetch(`${API_URL}/groups/${groupId}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  deleteGroup: async (groupId: string): Promise<{ success: boolean; message: string }> => {
+    const res = await fetch(`${API_URL}/groups/${groupId}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  getGroupActivity: async (groupId: string): Promise<ActivityItem[]> => {
+    const res = await fetch(`${API_URL}/groups/${groupId}/activity`, { headers: getHeaders() });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  // Files
+  uploadFile: async (groupId: string, file: File): Promise<{ message: string; file: FileItem }> => {
     const formData = new FormData();
+    formData.append('groupId', groupId);
     formData.append('file', file);
-    
-    const res = await fetch(`${API_URL}/files/${spaceId}/${subjectId}`, {
+
+    const res = await fetch(`${API_URL}/files/upload`, {
       method: 'POST',
-      headers: { ...authHeaders() },
-      body: formData
+      headers: authHeaders(),
+      body: formData,
     });
     if (!res.ok) throw new Error(await getError(res));
     return res.json();
   },
-  getMyUploads: async (search?: string) => {
+
+  getGroupFiles: async (groupId: string, params?: { q?: string; type?: string; sort?: string; uploaderId?: string }): Promise<FileItem[]> => {
     const query = new URLSearchParams();
-    if (search) query.append('search', search);
-    const res = await fetch(`${API_URL}/files/my/uploads?${query.toString()}`, {
-      headers: { ...authHeaders() }
+    if (params?.q) query.append('q', params.q);
+    if (params?.type && params.type !== 'all') query.append('type', params.type);
+    if (params?.sort) query.append('sort', params.sort);
+    if (params?.uploaderId) query.append('uploaderId', params.uploaderId);
+
+    const res = await fetch(`${API_URL}/files/group/${groupId}?${query.toString()}`, {
+      headers: getHeaders(),
     });
     if (!res.ok) throw new Error(await getError(res));
     return res.json();
   },
-  deleteMyUpload: async (fileId: string) => {
+
+  getAllFiles: async (params?: { q?: string; type?: string; sort?: string; groupId?: string }): Promise<FileItem[]> => {
+    const query = new URLSearchParams();
+    if (params?.q) query.append('q', params.q);
+    if (params?.type && params.type !== 'all') query.append('type', params.type);
+    if (params?.sort) query.append('sort', params.sort);
+    if (params?.groupId && params.groupId !== 'all') query.append('groupId', params.groupId);
+
+    const res = await fetch(`${API_URL}/files?${query.toString()}`, {
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  getMyUploads: async (params?: { q?: string; type?: string; sort?: string; groupId?: string }): Promise<FileItem[]> => {
+    const query = new URLSearchParams();
+    if (params?.q) query.append('q', params.q);
+    if (params?.type && params.type !== 'all') query.append('type', params.type);
+    if (params?.sort) query.append('sort', params.sort);
+    if (params?.groupId && params.groupId !== 'all') query.append('groupId', params.groupId);
+
+    const res = await fetch(`${API_URL}/files/my-uploads?${query.toString()}`, {
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  getSharedWithMe: async (params?: { q?: string; type?: string; sort?: string; groupId?: string }): Promise<FileItem[]> => {
+    const query = new URLSearchParams();
+    if (params?.q) query.append('q', params.q);
+    if (params?.type && params.type !== 'all') query.append('type', params.type);
+    if (params?.sort) query.append('sort', params.sort);
+    if (params?.groupId && params.groupId !== 'all') query.append('groupId', params.groupId);
+
+    const res = await fetch(`${API_URL}/files/shared-with-me?${query.toString()}`, {
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  deleteFile: async (fileId: string): Promise<{ success: boolean; message: string }> => {
     const res = await fetch(`${API_URL}/files/${fileId}`, {
       method: 'DELETE',
-      headers: { ...authHeaders() }
+      headers: getHeaders(),
     });
     if (!res.ok) throw new Error(await getError(res));
     return res.json();
   },
-  getDownloadUrl: (fileId: string) => {
-    return `${API_URL}/files/${fileId}/download?token=${getAuthToken()}`;
-  }
+
+  getDownloadUrl: (fileId: string): string => {
+    return `${API_URL}/files/${fileId}/download?token=${getAuthToken()}&redirect=true`;
+  },
+
+  getPreview: async (fileId: string): Promise<{ previewUrl: string; file: FileItem }> => {
+    const res = await fetch(`${API_URL}/files/${fileId}/preview`, {
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  // Dashboard Overview
+  getDashboard: async (): Promise<DashboardStats> => {
+    const res = await fetch(`${API_URL}/dashboard`, { headers: getHeaders() });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  // User Profile
+  getUserProfile: async (userId: string): Promise<{ user: User; commonGroups: Group[]; files: FileItem[]; isSelf: boolean }> => {
+    const res = await fetch(`${API_URL}/users/${userId}`, { headers: getHeaders() });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
 };
