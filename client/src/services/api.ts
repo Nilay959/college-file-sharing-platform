@@ -7,6 +7,7 @@ export interface User {
   email: string;
   avatar?: string;
   role?: string;
+  isVerified?: boolean;
   createdAt?: string;
 }
 
@@ -123,21 +124,70 @@ const getHeaders = () => ({ ...authHeaders(), 'Content-Type': 'application/json'
 
 export const api = {
   // Authentication
-  login: async (credentials: { email: string; password: string }): Promise<{ token: string; user: User }> => {
+  login: async (credentials: { email: string; password: string }): Promise<{ token: string; user: User; requiresVerification?: boolean; email?: string; devOtp?: string; message?: string }> => {
     const res = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials),
     });
-    if (!res.ok) throw new Error(await getError(res));
+    if (!res.ok) {
+      const errorText = await getError(res);
+      try {
+        const parsed = JSON.parse(errorText);
+        if (parsed.requiresVerification) {
+          return parsed;
+        }
+      } catch {}
+      throw new Error(errorText);
+    }
     return res.json();
   },
 
-  register: async (userData: { name: string; email: string; password: string; avatar?: string }): Promise<{ token: string; user: User }> => {
+  register: async (userData: { name: string; email: string; password: string; avatar?: string }): Promise<{ message: string; email: string; requiresVerification: boolean; devOtp?: string; token?: string; user?: User }> => {
     const res = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData),
+    });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  verifyRegistration: async (data: { email: string; otp: string }): Promise<{ token: string; user: User; message: string }> => {
+    const res = await fetch(`${API_URL}/auth/verify-registration`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  resendOtp: async (data: { email: string; purpose?: string }): Promise<{ message: string; devOtp?: string }> => {
+    const res = await fetch(`${API_URL}/auth/resend-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  forgotPassword: async (data: { email: string }): Promise<{ message: string; email: string; devOtp?: string }> => {
+    const res = await fetch(`${API_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  resetPassword: async (data: { email: string; otp: string; newPassword: string }): Promise<{ message: string }> => {
+    const res = await fetch(`${API_URL}/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
     });
     if (!res.ok) throw new Error(await getError(res));
     return res.json();

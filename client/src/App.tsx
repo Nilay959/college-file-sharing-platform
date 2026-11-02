@@ -109,7 +109,7 @@ function FileShareApp() {
     localStorage.removeItem("user");
     setUser(null);
     queryClient.clear();
-    window.history.pushState({}, "", "/auth");
+    window.history.pushState({}, "", "/login");
   };
 
   // 1. Fetch User Groups
@@ -217,6 +217,7 @@ function FileShareApp() {
         onAuthSuccess={(authUser) => {
           setUser(authUser);
           setUserInfo(authUser);
+          window.history.pushState({}, "", "/");
         }}
       />
     );
