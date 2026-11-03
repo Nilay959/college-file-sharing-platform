@@ -257,12 +257,10 @@ export function Avatar({ name, size = 32, avatarUrl }: { name?: string; size?: n
 
   const initial = (name || "U").trim().charAt(0).toUpperCase();
   const colors = [
-    { bg: "#FF7A1A", text: "#0A0A0A" },
-    { bg: "#262626", text: "#FFFFFF" },
-    { bg: "#22C55E", text: "#FFFFFF" },
-    { bg: "#F59E0B", text: "#FFFFFF" },
-    { bg: "#0EA5E9", text: "#FFFFFF" },
-    { bg: "#404040", text: "#FFFFFF" },
+    { bg: "#282828", text: "#F1F1F1" },
+    { bg: "#303030", text: "#F1F1F1" },
+    { bg: "#383838", text: "#F1F1F1" },
+    { bg: "#242424", text: "#F1F1F1" },
   ];
   const charCode = initial.charCodeAt(0) || 0;
   const color = colors[charCode % colors.length];

@@ -24,27 +24,27 @@ export function getFileCategoryInfo(name: string, mime: string) {
   const lowerMime = (mime || "").toLowerCase();
 
   if (lowerMime.includes("pdf") || lowerName.endsWith(".pdf")) {
-    return { kind: "pdf", label: "PDF", bg: "#EF4444", color: "#FFFFFF" };
+    return { kind: "pdf", label: "PDF", bg: "#282828", color: "#F1F1F1" };
   }
   if (lowerMime.includes("word") || /\.(docx?|odt|rtf|txt)$/i.test(lowerName)) {
-    return { kind: "doc", label: ext || "DOC", bg: "#3B82F6", color: "#FFFFFF" };
+    return { kind: "doc", label: ext || "DOC", bg: "#282828", color: "#F1F1F1" };
   }
   if (lowerMime.includes("excel") || lowerMime.includes("spreadsheet") || /\.(xlsx?|csv)$/i.test(lowerName)) {
-    return { kind: "xls", label: ext || "XLS", bg: "#10B981", color: "#FFFFFF" };
+    return { kind: "xls", label: ext || "XLS", bg: "#282828", color: "#F1F1F1" };
   }
   if (lowerMime.includes("presentation") || lowerMime.includes("powerpoint") || /\.(pptx?|odp)$/i.test(lowerName)) {
-    return { kind: "ppt", label: ext || "PPT", bg: "#F97316", color: "#FFFFFF" };
+    return { kind: "ppt", label: ext || "PPT", bg: "#282828", color: "#F1F1F1" };
   }
   if (lowerMime.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(lowerName)) {
-    return { kind: "img", label: ext || "IMG", bg: "#52525B", color: "#FFFFFF" };
+    return { kind: "img", label: ext || "IMG", bg: "#282828", color: "#F1F1F1" };
   }
   if (lowerMime.includes("zip") || lowerMime.includes("tar") || /\.(zip|rar|7z|gz|tar)$/i.test(lowerName)) {
-    return { kind: "zip", label: ext || "ZIP", bg: "#F59E0B", color: "#FFFFFF" };
+    return { kind: "zip", label: ext || "ZIP", bg: "#282828", color: "#F1F1F1" };
   }
   if (/\.(js|jsx|ts|tsx|py|java|c|cpp|cs|html|css|json|sql|sh)$/i.test(lowerName)) {
-    return { kind: "code", label: ext || "CODE", bg: "#FF7A1A", color: "#0A0A0A" };
+    return { kind: "code", label: ext || "CODE", bg: "#282828", color: "#F1F1F1" };
   }
-  return { kind: "file", label: ext || "FILE", bg: "#64748B", color: "#FFFFFF" };
+  return { kind: "file", label: ext || "FILE", bg: "#282828", color: "#F1F1F1" };
 }
 
 // Relative time format
