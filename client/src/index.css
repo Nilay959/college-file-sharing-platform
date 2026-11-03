@@ -2665,6 +2665,88 @@ button {
   filter: blur(100px);
 }
 
+/* ==============================================================
+   FIRST-LOAD ENTRANCE ANIMATIONS (Keyframes & Staggers)
+   ============================================================== */
+@keyframes heroFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes heroFadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Hero Entrance Animation Triggers */
+.hero-anim-navbar {
+  animation: heroFadeIn 700ms cubic-bezier(0.16, 1, 0.3, 1) 0ms both;
+}
+.hero-anim-headline {
+  animation: heroFadeUp 750ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
+}
+.hero-anim-desc {
+  animation: heroFadeUp 750ms cubic-bezier(0.16, 1, 0.3, 1) 240ms both;
+}
+.hero-anim-cta {
+  animation: heroFadeUp 750ms cubic-bezier(0.16, 1, 0.3, 1) 360ms both;
+}
+.hero-anim-benefits {
+  animation: heroFadeUp 750ms cubic-bezier(0.16, 1, 0.3, 1) 480ms both;
+}
+.hero-anim-mockup {
+  animation: heroFadeUp 800ms cubic-bezier(0.16, 1, 0.3, 1) 200ms both;
+}
+.hero-anim-bento-left {
+  animation: heroFadeUp 700ms cubic-bezier(0.16, 1, 0.3, 1) 360ms both;
+}
+.hero-anim-card-1 {
+  animation: heroFadeUp 700ms cubic-bezier(0.16, 1, 0.3, 1) 460ms both;
+}
+.hero-anim-card-2 {
+  animation: heroFadeUp 700ms cubic-bezier(0.16, 1, 0.3, 1) 540ms both;
+}
+.hero-anim-card-3 {
+  animation: heroFadeUp 700ms cubic-bezier(0.16, 1, 0.3, 1) 620ms both;
+}
+.hero-anim-card-4 {
+  animation: heroFadeUp 700ms cubic-bezier(0.16, 1, 0.3, 1) 700ms both;
+}
+.hero-anim-transfers {
+  animation: heroFadeUp 700ms cubic-bezier(0.16, 1, 0.3, 1) 780ms both;
+}
+
+/* ==============================================================
+   SCROLL-TRIGGERED REVEAL ANIMATIONS
+   ============================================================== */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 650ms cubic-bezier(0.16, 1, 0.3, 1), transform 650ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+.reveal-on-scroll.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.stagger-1 { transition-delay: 60ms; }
+.stagger-2 { transition-delay: 130ms; }
+.stagger-3 { transition-delay: 200ms; }
+.stagger-4 { transition-delay: 270ms; }
+.stagger-5 { transition-delay: 340ms; }
+.stagger-6 { transition-delay: 410ms; }
+
 /* Navigation Bar */
 .landing-navbar {
   position: sticky;
@@ -2698,15 +2780,22 @@ button {
   cursor: pointer;
   user-select: none;
 }
+/* Requirement 1: Solid Black Logo Icon Container */
 .nav-brand-icon {
   width: 38px;
   height: 38px;
   border-radius: 11px;
-  background: linear-gradient(135deg, #087CF0 0%, #35D6BC 100%);
+  background: #000000;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 14px rgba(8, 124, 240, 0.35);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+  transition: border-color 0.18s ease, transform 0.18s ease;
+}
+.landing-nav-brand:hover .nav-brand-icon {
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
 }
 .nav-brand-title {
   font-size: 20px;
@@ -2724,7 +2813,7 @@ button {
   font-size: 14.5px;
   font-weight: 500;
   color: var(--lp-text-secondary);
-  transition: color 0.15s ease;
+  transition: color 0.18s ease;
   cursor: pointer;
 }
 .nav-link-btn:hover {
@@ -2749,6 +2838,7 @@ button {
 .btn-nav-ghost:hover {
   background: #202227;
   border-color: #3F434C;
+  transform: translateY(-1px);
 }
 .btn-nav-gradient {
   padding: 9px 22px;
@@ -2761,11 +2851,14 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.18s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .btn-nav-gradient:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px) scale(1.02);
   box-shadow: 0 6px 24px rgba(255, 117, 24, 0.45);
+}
+.btn-nav-gradient:active {
+  transform: translateY(0) scale(0.99);
 }
 
 .btn-mobile-menu-toggle {
@@ -2829,10 +2922,10 @@ button {
 }
 
 /* ==============================================================
-   HERO SECTION (TransferPro Inspired Proportions)
+   HERO SECTION (Balanced Top Spacing - Badge Removed)
    ============================================================== */
 .landing-hero-section {
-  padding: 80px 28px 100px;
+  padding: 72px 28px 100px;
   max-width: 1380px;
   margin: 0 auto;
   position: relative;
@@ -2844,34 +2937,21 @@ button {
   gap: 56px;
   align-items: center;
 }
-.hero-pill-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 16px;
-  border-radius: 9999px;
-  background: var(--lp-card-dark);
-  border: 1px solid var(--lp-border);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--lp-yellow);
-  margin-bottom: 24px;
-}
-.badge-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--lp-orange);
-  box-shadow: 0 0 8px var(--lp-orange);
+.hero-text-column {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
+/* Requirement 2: Natural Hero Heading Spacing (Badge Removed) */
 .hero-main-heading {
   font-size: 52px;
   font-weight: 800;
   line-height: 1.14;
   color: var(--lp-text-primary);
   letter-spacing: -0.03em;
-  margin-bottom: 20px;
+  margin-top: 0;
+  margin-bottom: 22px;
 }
 .hero-main-heading em {
   font-style: italic;
@@ -2886,7 +2966,7 @@ button {
   font-size: 16px;
   line-height: 1.6;
   color: var(--lp-text-secondary);
-  margin-bottom: 32px;
+  margin-bottom: 34px;
   max-width: 500px;
 }
 .hero-cta-group {
@@ -2906,11 +2986,14 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  transition: all 0.18s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .btn-hero-primary:hover {
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.02);
   box-shadow: 0 8px 30px rgba(255, 117, 24, 0.5);
+}
+.btn-hero-primary:active {
+  transform: translateY(0) scale(0.99);
 }
 .btn-hero-secondary {
   padding: 14px 26px;
@@ -3061,10 +3144,13 @@ button {
   box-shadow: 0 4px 14px rgba(255, 117, 24, 0.28);
   margin-bottom: 18px;
   cursor: pointer;
-  transition: transform 0.15s;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .btn-mockup-browse:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px) scale(1.02);
+}
+.btn-mockup-browse:active {
+  transform: translateY(0);
 }
 
 .speedometer-box {
@@ -3116,10 +3202,10 @@ button {
   flex-direction: column;
   justify-content: space-between;
   min-height: 130px;
-  transition: transform 0.15s ease;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
 }
 .bento-mini-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
 }
 .bento-card-top {
   display: flex;
@@ -3154,6 +3240,10 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.2s ease;
+}
+.bento-mini-card.card-white:hover .bento-arrow-circle.dark {
+  transform: translate(2px, -2px);
 }
 .bento-label-dark {
   font-size: 10.5px;
@@ -3181,6 +3271,10 @@ button {
   gap: 4px;
   align-self: flex-start;
   margin-top: 8px;
+  transition: background 0.15s ease;
+}
+.bento-pill-btn.dark:hover {
+  background: #27272A;
 }
 
 .bento-title-dark {
@@ -3236,6 +3330,10 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.2s ease;
+}
+.bento-mini-card.card-blue:hover .bento-arrow-circle.light {
+  transform: translate(2px, -2px);
 }
 .bento-label-light {
   font-size: 10.5px;
@@ -3425,17 +3523,23 @@ button {
   flex-direction: column;
   justify-content: space-between;
   min-height: 270px;
-  transition: all 0.2s ease;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
   position: relative;
 }
 .feature-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-4px);
 }
 .feature-card-top-action {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+}
+.card-corner-arrow {
+  transition: transform 0.2s ease;
+}
+.feature-card:hover .card-corner-arrow {
+  transform: translate(2px, -2px);
 }
 
 /* White Feature Card */
@@ -3622,10 +3726,10 @@ button {
   display: flex;
   flex-direction: column;
   min-height: 210px;
-  transition: all 0.18s ease;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
 }
 .step-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
 }
 .step-card.card-dark {
   background: var(--lp-card-dark);
@@ -3737,11 +3841,11 @@ button {
   border: 1px solid var(--lp-border);
   border-radius: 18px;
   padding: 24px;
-  transition: all 0.15s ease;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
 }
 .security-spec-card:hover {
   border-color: #3F434C;
-  transform: translateY(-2px);
+  transform: translateY(-3px);
 }
 .spec-icon-box {
   width: 38px;
@@ -3835,11 +3939,14 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  transition: all 0.18s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .btn-cta-main:hover {
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.02);
   box-shadow: 0 8px 30px rgba(255, 117, 24, 0.55);
+}
+.btn-cta-main:active {
+  transform: translateY(0) scale(0.99);
 }
 
 /* ==============================================================
@@ -3890,7 +3997,7 @@ button {
   font-size: 13.5px;
   color: var(--lp-text-secondary);
   text-align: left;
-  transition: color 0.15s;
+  transition: color 0.18s ease;
 }
 .footer-column button:hover {
   color: var(--lp-text-primary);
@@ -3968,7 +4075,7 @@ button {
 }
 
 /* ==============================================================
-   RESPONSIVE BREAKPOINTS
+   RESPONSIVE BREAKPOINTS & ACCESSIBILITY
    ============================================================== */
 @media (max-width: 1100px) {
   .hero-grid-container {
@@ -3998,10 +4105,11 @@ button {
     display: flex;
   }
   .landing-hero-section {
-    padding: 40px 16px 64px;
+    padding: 36px 16px 64px;
   }
   .hero-main-heading {
     font-size: 34px;
+    margin-bottom: 18px;
   }
   .mockup-bento-grid {
     grid-template-columns: 1fr;
@@ -4037,5 +4145,27 @@ button {
     flex-direction: column;
     gap: 8px;
     text-align: center;
+  }
+}
+
+/* Accessibility: Respect Reduced Motion Preference */
+@media (prefers-reduced-motion: reduce) {
+  .hero-anim-navbar,
+  .hero-anim-headline,
+  .hero-anim-desc,
+  .hero-anim-cta,
+  .hero-anim-benefits,
+  .hero-anim-mockup,
+  .hero-anim-bento-left,
+  .hero-anim-card-1,
+  .hero-anim-card-2,
+  .hero-anim-card-3,
+  .hero-anim-card-4,
+  .hero-anim-transfers,
+  .reveal-on-scroll {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
   }
 }

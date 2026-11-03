@@ -12,7 +12,6 @@ import {
   Lock,
   Key,
   FileText,
-  Sparkles,
   Menu,
   X,
   Zap,
@@ -20,10 +19,6 @@ import {
   Search,
   Copy,
   Check,
-  ChevronRight,
-  FileCode,
-  FileSpreadsheet,
-  FileImage,
 } from "lucide-react";
 
 interface LandingPageProps {
@@ -43,6 +38,38 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Scroll-triggered reveal animations via IntersectionObserver
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") {
+      // Fallback: make all elements immediately visible if IntersectionObserver unsupported
+      document.querySelectorAll(".reveal-on-scroll").forEach((el) => {
+        el.classList.add("revealed");
+      });
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("revealed");
+            // Do NOT replay on scroll up and down: unobserve once revealed
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        threshold: 0.15,
+        rootMargin: "0px 0px -30px 0px",
+      }
+    );
+
+    const elements = document.querySelectorAll(".reveal-on-scroll");
+    elements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
   }, []);
 
   const handleCopyDemoCode = (e?: React.MouseEvent) => {
@@ -70,12 +97,12 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
       {/* ==============================================================
           A. NAVIGATION BAR
           ============================================================== */}
-      <header className={`landing-navbar ${scrolled ? "scrolled" : ""}`}>
+      <header className={`landing-navbar hero-anim-navbar ${scrolled ? "scrolled" : ""}`}>
         <div className="landing-nav-container">
-          {/* Logo & Brand */}
+          {/* Logo & Brand (Solid Black Logo Icon Container) */}
           <div className="landing-nav-brand" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
             <div className="nav-brand-icon">
-              <Folder size={20} className="text-white" />
+              <Folder size={19} className="text-white" />
             </div>
             <span className="nav-brand-title">FileShare</span>
           </div>
@@ -174,32 +201,26 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
       </header>
 
       {/* ==============================================================
-          B. HERO SECTION (TransferPro Inspired Proportions & Layout)
+          B. HERO SECTION (Badge Removed & Entrance Animations Added)
           ============================================================== */}
       <section className="landing-hero-section">
         <div className="hero-grid-container">
           {/* Left Column: Headline & Value Proposition */}
           <div className="hero-text-column">
-            {/* Small Badge */}
-            <div className="hero-pill-badge">
-              <span className="badge-dot" />
-              <span>Simple. Secure. Collaborative.</span>
-            </div>
-
-            {/* Main Headline (Geometric Sans, Tight Tracking, Italic Accents, Vibrant Gradient) */}
-            <h1 className="hero-main-heading">
+            {/* Main Headline (Stagger 1: Entrance Animation) */}
+            <h1 className="hero-main-heading hero-anim-headline">
               <em>Your Files.</em> <br />
               Your Groups. <br />
               <span className="hero-gradient-text"><em>Everything Connected.</em></span>
             </h1>
 
-            {/* Supporting Description */}
-            <p className="hero-supporting-description">
+            {/* Supporting Description (Stagger 2: Entrance Animation) */}
+            <p className="hero-supporting-description hero-anim-desc">
               Share files effortlessly with your teams, classmates and communities. Create groups, invite members and manage everything from one secure workspace.
             </p>
 
-            {/* Call to Action Buttons */}
-            <div className="hero-cta-group">
+            {/* Call to Action Buttons (Stagger 3: Entrance Animation) */}
+            <div className="hero-cta-group hero-anim-cta">
               <button
                 type="button"
                 className="btn-hero-primary"
@@ -217,8 +238,8 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
               </button>
             </div>
 
-            {/* Three Benefit Indicators */}
-            <div className="hero-benefit-indicators">
+            {/* Three Benefit Indicators (Stagger 4: Entrance Animation) */}
+            <div className="hero-benefit-indicators hero-anim-benefits">
               <div className="benefit-item">
                 <Shield size={16} className="benefit-icon text-cyan" />
                 <span>Secure File Sharing</span>
@@ -237,7 +258,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
           </div>
 
           {/* Right Column: Visual Product Mockup (TransferPro Bento Dashboard Style) */}
-          <div className="hero-mockup-column">
+          <div className="hero-mockup-column hero-anim-mockup">
             <div className="mockup-perspective-wrap">
               {/* Outer Dashboard Card */}
               <div className="mockup-main-card">
@@ -263,7 +284,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
                 {/* TransferPro Style Top Grid: Left Drag & Speedometer + Right 2x2 Bento */}
                 <div className="mockup-bento-grid">
                   {/* Left Bento: Drag & Drop + Speedometer Arc Gauge */}
-                  <div className="bento-drag-panel">
+                  <div className="bento-drag-panel hero-anim-bento-left">
                     <div className="drag-panel-text">
                       <h3 className="drag-title">Drag & Drop Files</h3>
                       <p className="drag-subtitle">
@@ -330,7 +351,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
                   {/* Right Bento: 2x2 Clean Feature Bento Cards */}
                   <div className="bento-cards-2x2">
                     {/* Card 1: Clean White Card with Permanent Invite Code */}
-                    <div className="bento-mini-card card-white" onClick={handleCopyDemoCode}>
+                    <div className="bento-mini-card card-white hero-anim-card-1" onClick={handleCopyDemoCode}>
                       <div className="bento-card-top">
                         <div className="bento-icon-circle dark">
                           <Key size={13} />
@@ -350,7 +371,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
                     </div>
 
                     {/* Card 2: Clean White Card with Files & Mini Badges */}
-                    <div className="bento-mini-card card-white">
+                    <div className="bento-mini-card card-white hero-anim-card-2">
                       <div className="bento-card-top">
                         <div className="bento-icon-circle dark">
                           <Folder size={13} />
@@ -372,7 +393,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
                     </div>
 
                     {/* Card 3: Deep Royal Blue Card for Storage Usage */}
-                    <div className="bento-mini-card card-blue">
+                    <div className="bento-mini-card card-blue hero-anim-card-3">
                       <div className="bento-card-top">
                         <div className="bento-icon-circle blue">
                           <HardDrive size={13} />
@@ -396,7 +417,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
                     </div>
 
                     {/* Card 4: Clean White Card with Security/Verified Access */}
-                    <div className="bento-mini-card card-white">
+                    <div className="bento-mini-card card-white hero-anim-card-4">
                       <div className="bento-card-top">
                         <div className="bento-icon-circle dark">
                           <Shield size={13} />
@@ -418,7 +439,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
                 </div>
 
                 {/* Bottom Row: Recent Transfers (TransferPro Style) */}
-                <div className="mockup-transfers-bar">
+                <div className="mockup-transfers-bar hero-anim-transfers">
                   <div className="transfers-bar-header">
                     <span className="transfers-title">Recent Transfers</span>
                     <button
@@ -481,11 +502,11 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
       </section>
 
       {/* ==============================================================
-          C. FEATURES SECTION (TransferPro Bento Style Variety)
+          C. FEATURES SECTION (TransferPro Bento Style Variety + Scroll Reveal)
           ============================================================== */}
       <section id="features" className="landing-section features-section">
         <div className="section-container">
-          <div className="section-header-block">
+          <div className="section-header-block reveal-on-scroll">
             <span className="section-sub-badge">Platform Capabilities</span>
             <h2 className="section-main-heading">
               Everything Your Team Needs to Share Files
@@ -497,7 +518,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
 
           <div className="features-cards-grid">
             {/* Feature 1: Clean White Card (Contrast Highlight) */}
-            <div className="feature-card card-white">
+            <div className="feature-card card-white reveal-on-scroll stagger-1">
               <div className="feature-card-top-action">
                 <div className="feature-icon-wrapper dark">
                   <Folder size={22} />
@@ -516,7 +537,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
             </div>
 
             {/* Feature 2: Dark Card with Orange Accent */}
-            <div className="feature-card card-dark">
+            <div className="feature-card card-dark reveal-on-scroll stagger-2">
               <div className="feature-card-top-action">
                 <div className="feature-icon-wrapper orange">
                   <Key size={22} />
@@ -535,7 +556,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
             </div>
 
             {/* Feature 3: Deep Royal Blue Gradient Card */}
-            <div className="feature-card card-blue">
+            <div className="feature-card card-blue reveal-on-scroll stagger-3">
               <div className="feature-card-top-action">
                 <div className="feature-icon-wrapper cyan">
                   <Shield size={22} />
@@ -554,7 +575,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
             </div>
 
             {/* Feature 4: Dark Card with Cyan Accent */}
-            <div className="feature-card card-dark">
+            <div className="feature-card card-dark reveal-on-scroll stagger-4">
               <div className="feature-card-top-action">
                 <div className="feature-icon-wrapper cyan">
                   <Users size={22} />
@@ -573,7 +594,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
             </div>
 
             {/* Feature 5: Clean White Card (Contrast Highlight) */}
-            <div className="feature-card card-white">
+            <div className="feature-card card-white reveal-on-scroll stagger-5">
               <div className="feature-card-top-action">
                 <div className="feature-icon-wrapper orange">
                   <UploadCloud size={22} />
@@ -592,7 +613,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
             </div>
 
             {/* Feature 6: Dark Card with Yellow Accent */}
-            <div className="feature-card card-dark">
+            <div className="feature-card card-dark reveal-on-scroll stagger-6">
               <div className="feature-card-top-action">
                 <div className="feature-icon-wrapper yellow">
                   <Search size={22} />
@@ -614,11 +635,11 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
       </section>
 
       {/* ==============================================================
-          D. HOW IT WORKS SECTION (Compact, High-Contrast Workflow)
+          D. HOW IT WORKS SECTION (Compact Workflow + Scroll Reveal)
           ============================================================== */}
       <section id="how-it-works" className="landing-section how-it-works-section">
         <div className="section-container">
-          <div className="section-header-block">
+          <div className="section-header-block reveal-on-scroll">
             <span className="section-sub-badge">Workflow</span>
             <h2 className="section-main-heading">Get Started in 3 Simple Steps</h2>
             <p className="section-description">
@@ -628,7 +649,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
 
           <div className="steps-container-grid">
             {/* Step 1: Dark Card with Orange Accent */}
-            <div className="step-card card-dark">
+            <div className="step-card card-dark reveal-on-scroll stagger-1">
               <div className="step-top-row">
                 <div className="step-icon-badge orange">
                   <Users size={20} />
@@ -642,7 +663,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
             </div>
 
             {/* Step 2: Clean White Card (Contrast Focal Point) */}
-            <div className="step-card card-white">
+            <div className="step-card card-white reveal-on-scroll stagger-2">
               <div className="step-top-row">
                 <div className="step-icon-badge dark">
                   <Key size={20} />
@@ -656,7 +677,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
             </div>
 
             {/* Step 3: Dark Card with Cyan Accent */}
-            <div className="step-card card-dark">
+            <div className="step-card card-dark reveal-on-scroll stagger-3">
               <div className="step-top-row">
                 <div className="step-icon-badge cyan">
                   <Share2 size={20} />
@@ -673,11 +694,11 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
       </section>
 
       {/* ==============================================================
-          E. SECURITY SECTION (Clean Dark Cards, Vibrant Icons)
+          E. SECURITY SECTION (Clean Dark Cards, Vibrant Icons + Scroll Reveal)
           ============================================================== */}
       <section id="security" className="landing-section security-section">
         <div className="section-container">
-          <div className="section-header-block">
+          <div className="section-header-block reveal-on-scroll">
             <span className="section-sub-badge">Data Privacy & Control</span>
             <h2 className="section-main-heading">
               Your Files Stay With the Right People
@@ -688,7 +709,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
           </div>
 
           <div className="security-features-grid">
-            <div className="security-spec-card">
+            <div className="security-spec-card reveal-on-scroll stagger-1">
               <div className="spec-icon-box cyan">
                 <Lock size={19} />
               </div>
@@ -696,7 +717,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
               <p>JWT-based cryptographic tokens ensure only signed-in verified users can access workspace APIs.</p>
             </div>
 
-            <div className="security-spec-card">
+            <div className="security-spec-card reveal-on-scroll stagger-2">
               <div className="spec-icon-box orange">
                 <Users size={19} />
               </div>
@@ -704,7 +725,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
               <p>Users can only view, download, or search files from groups they are explicitly approved members of.</p>
             </div>
 
-            <div className="security-spec-card">
+            <div className="security-spec-card reveal-on-scroll stagger-3">
               <div className="spec-icon-box blue">
                 <HardDrive size={19} />
               </div>
@@ -712,7 +733,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
               <p>Files are stored in dedicated cloud buckets with secure presigned URLs that expire automatically.</p>
             </div>
 
-            <div className="security-spec-card">
+            <div className="security-spec-card reveal-on-scroll stagger-4">
               <div className="spec-icon-box yellow">
                 <Download size={19} />
               </div>
@@ -720,7 +741,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
               <p>Direct public bucket browsing is blocked. Every download verifies real-time user group membership.</p>
             </div>
 
-            <div className="security-spec-card">
+            <div className="security-spec-card reveal-on-scroll stagger-5">
               <div className="spec-icon-box cyan">
                 <Shield size={19} />
               </div>
@@ -728,7 +749,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
               <p>Group creators have administrative control over memberships and file moderation inside their group.</p>
             </div>
 
-            <div className="security-spec-card">
+            <div className="security-spec-card reveal-on-scroll stagger-6">
               <div className="spec-icon-box orange">
                 <Zap size={19} />
               </div>
@@ -740,11 +761,11 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
       </section>
 
       {/* ==============================================================
-          F. FINAL CALL TO ACTION (CTA)
+          F. FINAL CALL TO ACTION (CTA + Scroll Reveal)
           ============================================================== */}
       <section className="landing-cta-section">
         <div className="section-container">
-          <div className="cta-banner-card">
+          <div className="cta-banner-card reveal-on-scroll">
             <div className="cta-glow-backdrop" />
             <div className="cta-content-wrapper">
               <h2 className="cta-heading">Ready to Organise Your Files?</h2>
@@ -767,7 +788,7 @@ export function LandingPage({ onNavigate, isAuthenticated }: LandingPageProps) {
       </section>
 
       {/* ==============================================================
-          G. FOOTER
+          G. FOOTER (Solid Black Icon Box)
           ============================================================== */}
       <footer className="landing-footer">
         <div className="footer-container">
