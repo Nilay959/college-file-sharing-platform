@@ -26,12 +26,12 @@ export function getGroupVisual(name: string) {
     return { icon: "users", bg: "rgba(14, 165, 233, 0.18)", color: "#0EA5E9" };
   }
   if (lower.includes("web") || lower.includes("lab") || lower.includes("tech")) {
-    return { icon: "laptop", bg: "rgba(99, 102, 241, 0.18)", color: "#6366F1" };
+    return { icon: "laptop", bg: "rgba(255, 122, 26, 0.15)", color: "#FF7A1A" };
   }
   if (lower.includes("semester") || lower.includes("sem") || lower.includes("cse") || lower.includes("exam")) {
-    return { icon: "gradCap", bg: "rgba(139, 92, 246, 0.18)", color: "#8B5CF6" };
+    return { icon: "gradCap", bg: "rgba(255, 122, 26, 0.15)", color: "#FF7A1A" };
   }
-  return { icon: "folder", bg: "rgba(99, 102, 241, 0.18)", color: "#6366F1" };
+  return { icon: "folder", bg: "rgba(255, 122, 26, 0.15)", color: "#FF7A1A" };
 }
 
 // Format relative time like WhatsApp (e.g., 4:23 pm, Yesterday, 20 Oct)

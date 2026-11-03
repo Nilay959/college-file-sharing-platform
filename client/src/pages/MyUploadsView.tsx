@@ -101,8 +101,8 @@ export function MyUploadsView({ groups, onOpenUpload, onNavigateUser }: MyUpload
           </div>
         </div>
 
-        <div className="stat-card purple">
-          <div className="stat-card-icon purple">
+        <div className="stat-card orange">
+          <div className="stat-card-icon orange">
             <Icon name="folder" size={20} />
           </div>
           <div className="stat-card-text">

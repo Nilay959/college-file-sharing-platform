@@ -12,7 +12,7 @@ export function NotFoundPage({ onNavigate, isAuthenticated }: NotFoundPageProps)
       <div className="ambient-glow glow-mid-center" />
       <div className="not-found-card">
         <div className="not-found-icon-wrap">
-          <Folder size={44} className="text-indigo-400" />
+          <Folder size={44} className="text-[#FF7A1A]" />
         </div>
         <span className="not-found-code-badge">404 ERROR</span>
         <h1 className="not-found-title">Page Not Found</h1>

@@ -69,8 +69,8 @@ export function DashboardPage({
           </div>
         </div>
 
-        <div className="stat-card purple" onClick={() => onNavigate("/files")}>
-          <div className="stat-card-icon purple">
+        <div className="stat-card orange" onClick={() => onNavigate("/files")}>
+          <div className="stat-card-icon orange">
             <Icon name="fileText" size={22} />
           </div>
           <div className="stat-card-text">
@@ -113,7 +113,7 @@ export function DashboardPage({
 
                 return (
                   <div key={act._id} className="activity-item">
-                    <div className={`activity-icon-badge ${isUploader ? "blue" : isJoin ? "green" : isCreate ? "purple" : "gray"}`}>
+                    <div className={`activity-icon-badge ${isUploader ? "blue" : isJoin ? "green" : isCreate ? "orange" : "gray"}`}>
                       <Icon
                         name={isUploader ? "upload" : isJoin ? "users" : isCreate ? "folder" : "activity"}
                         size={16}

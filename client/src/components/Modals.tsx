@@ -314,7 +314,7 @@ export function UploadModal({
                 <div className="dropzone-file-selected">
                   <strong>{file.name}</strong>
                   <span>{(file.size / (1024 * 1024)).toFixed(2)} MB</span>
-                  <small style={{ color: "#6366F1", marginTop: 4 }}>Click or drag another file to replace</small>
+                  <small style={{ color: "#FF7A1A", marginTop: 4 }}>Click or drag another file to replace</small>
                 </div>
               ) : (
                 <div className="dropzone-instructions">
@@ -705,7 +705,7 @@ export function NotificationsModal({
                   fontSize: 13,
                 }}
               >
-                <div style={{ color: "#6366F1", marginTop: 2 }}>
+                <div style={{ color: "#FF7A1A", marginTop: 2 }}>
                   <Icon name={act.action.includes("upload") ? "upload" : "users"} size={16} />
                 </div>
                 <div>

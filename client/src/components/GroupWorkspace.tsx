@@ -36,13 +36,13 @@ export function getFileCategoryInfo(name: string, mime: string) {
     return { kind: "ppt", label: ext || "PPT", bg: "#F97316", color: "#FFFFFF" };
   }
   if (lowerMime.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(lowerName)) {
-    return { kind: "img", label: ext || "IMG", bg: "#8B5CF6", color: "#FFFFFF" };
+    return { kind: "img", label: ext || "IMG", bg: "#52525B", color: "#FFFFFF" };
   }
   if (lowerMime.includes("zip") || lowerMime.includes("tar") || /\.(zip|rar|7z|gz|tar)$/i.test(lowerName)) {
     return { kind: "zip", label: ext || "ZIP", bg: "#F59E0B", color: "#FFFFFF" };
   }
   if (/\.(js|jsx|ts|tsx|py|java|c|cpp|cs|html|css|json|sql|sh)$/i.test(lowerName)) {
-    return { kind: "code", label: ext || "CODE", bg: "#6366F1", color: "#FFFFFF" };
+    return { kind: "code", label: ext || "CODE", bg: "#FF7A1A", color: "#0A0A0A" };
   }
   return { kind: "file", label: ext || "FILE", bg: "#64748B", color: "#FFFFFF" };
 }
