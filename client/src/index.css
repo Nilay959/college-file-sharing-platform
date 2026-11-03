@@ -523,26 +523,30 @@ button {
   padding: 10px 12px;
   border-radius: 10px;
   cursor: pointer;
-  transition: background 0.15s ease;
-  margin-bottom: 2px;
-  border-left: 3px solid transparent;
+  transition: all 0.15s ease;
+  margin-bottom: 3px;
+  border: 1px solid transparent;
 }
 .sidebar-group-item:hover {
-  background: var(--bg-hover);
+  background: #18181A;
 }
 .sidebar-group-item.selected {
-  background: var(--color-primary-soft);
-  border-left-color: var(--color-primary);
+  background: #202022;
+  border: 1px solid #323236;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 .group-item-avatar {
   width: 44px;
   height: 44px;
   border-radius: 12px;
+  background: #FFFFFF !important;
+  color: #FF7A1A !important;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
 .group-item-content {
@@ -563,10 +567,14 @@ button {
 .group-item-name {
   font-size: 15px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: #FF7A1A;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.sidebar-group-item.selected .group-item-name {
+  color: #FF7A1A;
+  font-weight: 700;
 }
 
 .group-item-time {
@@ -652,7 +660,7 @@ button {
   justify-content: space-between;
   padding: 0 20px;
   border-bottom: 1px solid var(--border);
-  background: #121824;
+  background: var(--bg-sidebar);
   flex-shrink: 0;
 }
 
@@ -684,10 +692,13 @@ button {
   width: 44px;
   height: 44px;
   border-radius: 12px;
+  background: #FFFFFF !important;
+  color: #FF7A1A !important;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
 .group-header-title-box {
@@ -699,8 +710,8 @@ button {
 
 .group-header-title {
   font-size: 17px;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-weight: 700;
+  color: #FF7A1A;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1323,17 +1334,19 @@ button {
 .group-large-avatar {
   width: 76px;
   height: 76px;
-  border-radius: 50%;
+  border-radius: 20px;
+  background: #FFFFFF !important;
+  color: #FF7A1A !important;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 14px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 .group-profile-name {
   font-size: 20px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #FF7A1A;
   margin-bottom: 4px;
 }
 .group-profile-stats {

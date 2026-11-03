@@ -20,18 +20,18 @@ interface LeftSidebarProps {
 export function getGroupVisual(name: string) {
   const lower = name.toLowerCase();
   if (lower.includes("dsa") || lower.includes("code") || lower.includes("dev") || lower.includes("programming")) {
-    return { icon: "code", bg: "rgba(16, 185, 129, 0.18)", color: "#10B981" };
+    return { icon: "code", bg: "#FFFFFF", color: "#FF7A1A" };
   }
   if (lower.includes("team") || lower.includes("project") || lower.includes("club") || lower.includes("batch")) {
-    return { icon: "users", bg: "rgba(14, 165, 233, 0.18)", color: "#0EA5E9" };
+    return { icon: "users", bg: "#FFFFFF", color: "#FF7A1A" };
   }
   if (lower.includes("web") || lower.includes("lab") || lower.includes("tech")) {
-    return { icon: "laptop", bg: "rgba(255, 122, 26, 0.15)", color: "#FF7A1A" };
+    return { icon: "laptop", bg: "#FFFFFF", color: "#FF7A1A" };
   }
   if (lower.includes("semester") || lower.includes("sem") || lower.includes("cse") || lower.includes("exam")) {
-    return { icon: "gradCap", bg: "rgba(255, 122, 26, 0.15)", color: "#FF7A1A" };
+    return { icon: "gradCap", bg: "#FFFFFF", color: "#FF7A1A" };
   }
-  return { icon: "folder", bg: "rgba(255, 122, 26, 0.15)", color: "#FF7A1A" };
+  return { icon: "folder", bg: "#FFFFFF", color: "#FF7A1A" };
 }
 
 // Format relative time like WhatsApp (e.g., 4:23 pm, Yesterday, 20 Oct)
