@@ -140,7 +140,7 @@ export function GroupWorkspace({
 
   if (!group) {
     return (
-      <div className="workspace-empty-container">
+      <div key="empty-workspace" className="workspace-empty-container">
         <div className="workspace-empty-icon">
           <Icon name="folder" size={48} />
         </div>
@@ -151,9 +151,10 @@ export function GroupWorkspace({
   }
 
   const { icon: groupIcon, bg: groupBg, color: groupColor } = getGroupVisual(group.name);
+  const groupId = group.id || (group as any)._id;
 
   return (
-    <section className={`fileshare-workspace-panel ${isGroupInfoOpen ? "drawer-open" : ""}`}>
+    <section key={groupId} className={`fileshare-workspace-panel ${isGroupInfoOpen ? "drawer-open" : ""}`}>
       {/* ==============================================================
           A. COMPACT GROUP HEADER (Height: 68px, WhatsApp Web style)
           ============================================================== */}
@@ -374,7 +375,7 @@ export function GroupWorkspace({
         ) : viewMode === "grid" ? (
           /* Responsive Grid View */
           <div className="workspace-file-grid">
-            {processedFiles.map((file) => {
+            {processedFiles.map((file, index) => {
               const fileId = file.id || file._id;
               const { kind, label, bg, color } = getFileCategoryInfo(file.originalName, file.mimeType);
               const isImage = kind === "img";
@@ -382,7 +383,11 @@ export function GroupWorkspace({
               const downloadUrl = api.getDownloadUrl(fileId);
 
               return (
-                <div key={fileId} className="file-grid-card">
+                <div
+                  key={fileId}
+                  className="file-grid-card"
+                  style={{ "--card-index": Math.min(index, 12) } as React.CSSProperties}
+                >
                   {/* Card Top / Thumbnail Area */}
                   <div
                     className="file-card-preview-area"
@@ -524,13 +529,17 @@ export function GroupWorkspace({
               <span className="col-actions">Actions</span>
             </div>
 
-            {processedFiles.map((file) => {
+            {processedFiles.map((file, index) => {
               const fileId = file.id || file._id;
               const { label, bg, color } = getFileCategoryInfo(file.originalName, file.mimeType);
               const downloadUrl = api.getDownloadUrl(fileId);
 
               return (
-                <div key={fileId} className="file-list-row">
+                <div
+                  key={fileId}
+                  className="file-list-row"
+                  style={{ "--row-index": Math.min(index, 15) } as React.CSSProperties}
+                >
                   <div className="col-name file-list-name-col" onClick={() => onPreviewFile(file)}>
                     <span
                       className="file-list-badge"

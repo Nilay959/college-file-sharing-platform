@@ -30,6 +30,16 @@ const queryClient = new QueryClient({
   },
 });
 
+// Global Top Glowing Page Loading Bar
+function PageLoadingBar({ active }: { active: boolean }) {
+  if (!active) return null;
+  return (
+    <div className="global-page-loading-bar-wrap" aria-hidden="true">
+      <div className="global-page-loading-bar" />
+    </div>
+  );
+}
+
 export function AppContent() {
   const queryClient = useQueryClient();
 
@@ -39,9 +49,11 @@ export function AppContent() {
 
   // Routing State
   const [currentPath, setCurrentPath] = useState<string>(() => window.location.pathname || "/");
+  const [isPageLoading, setIsPageLoading] = useState(true);
 
-  // Navigation helper
+  // Navigation helper with loading indicator trigger
   const navigate = useCallback((path: string, replace = false) => {
+    setIsPageLoading(true);
     if (replace) {
       window.history.replaceState({}, "", path);
     } else {
@@ -53,11 +65,21 @@ export function AppContent() {
   // Listen to browser back/forward buttons
   useEffect(() => {
     const handlePopState = () => {
+      setIsPageLoading(true);
       setCurrentPath(window.location.pathname || "/");
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
+
+  // Complete page loading animation smoothly
+  useEffect(() => {
+    if (!isPageLoading) return;
+    const timer = setTimeout(() => {
+      setIsPageLoading(false);
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [isPageLoading, currentPath]);
 
   // Listen to 401 unauthorized events
   useEffect(() => {
@@ -244,10 +266,15 @@ export function AppContent() {
   // 1. PUBLIC ROUTE: Landing Page ('/')
   if (normalizedPath === "/") {
     return (
-      <LandingPage
-        onNavigate={navigate}
-        isAuthenticated={isAuthenticated}
-      />
+      <>
+        <PageLoadingBar active={isPageLoading} />
+        <div key="landing-page" className="page-transition-wrap">
+          <LandingPage
+            onNavigate={navigate}
+            isAuthenticated={isAuthenticated}
+          />
+        </div>
+      </>
     );
   }
 
@@ -265,7 +292,14 @@ export function AppContent() {
       navigate("/app", true);
       return null;
     }
-    return <AuthPage onAuthSuccess={handleAuthSuccess} />;
+    return (
+      <>
+        <PageLoadingBar active={isPageLoading} />
+        <div key={`auth-${normalizedPath}`} className="page-transition-wrap">
+          <AuthPage onAuthSuccess={handleAuthSuccess} />
+        </div>
+      </>
+    );
   }
 
   // 3. PROTECTED ROUTES: Starts with '/app'
@@ -279,8 +313,10 @@ export function AppContent() {
 
     // Render Authenticated FileShare Application (WhatsApp Web 3-Panel Workspace)
     return (
-      <div className="fileshare-app-root">
-        <div className="fileshare-three-panel-layout">
+      <>
+        <PageLoadingBar active={isPageLoading} />
+        <div key="workspace-app" className="page-transition-wrap fileshare-app-root">
+          <div className="fileshare-three-panel-layout">
           {/* PANEL 1: LEFT SIDEBAR (Width: 340px) */}
           <div className={`layout-panel-left ${mobileView === "workspace" ? "mobile-hidden" : ""}`}>
             <LeftSidebar
@@ -417,16 +453,22 @@ export function AppContent() {
           isOpen={notificationsOpen}
           onClose={() => setNotificationsOpen(false)}
         />
-      </div>
+        </div>
+      </>
     );
   }
 
   // 4. INVALID ROUTE: 404 Page Not Found
   return (
-    <NotFoundPage
-      onNavigate={navigate}
-      isAuthenticated={isAuthenticated}
-    />
+    <>
+      <PageLoadingBar active={isPageLoading} />
+      <div key="not-found-page" className="page-transition-wrap">
+        <NotFoundPage
+          onNavigate={navigate}
+          isAuthenticated={isAuthenticated}
+        />
+      </div>
+    </>
   );
 }
 

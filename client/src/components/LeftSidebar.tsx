@@ -20,18 +20,18 @@ interface LeftSidebarProps {
 export function getGroupVisual(name: string) {
   const lower = name.toLowerCase();
   if (lower.includes("dsa") || lower.includes("code") || lower.includes("dev") || lower.includes("programming")) {
-    return { icon: "code", bg: "#252525", color: "#F1F1F1" };
+    return { icon: "code", bg: "#FFFFFF", color: "#FF7A1A" };
   }
   if (lower.includes("team") || lower.includes("project") || lower.includes("club") || lower.includes("batch")) {
-    return { icon: "users", bg: "#252525", color: "#F1F1F1" };
+    return { icon: "users", bg: "#FFFFFF", color: "#FF7A1A" };
   }
   if (lower.includes("web") || lower.includes("lab") || lower.includes("tech")) {
-    return { icon: "laptop", bg: "#252525", color: "#F1F1F1" };
+    return { icon: "laptop", bg: "#FFFFFF", color: "#FF7A1A" };
   }
   if (lower.includes("semester") || lower.includes("sem") || lower.includes("cse") || lower.includes("exam")) {
-    return { icon: "gradCap", bg: "#252525", color: "#F1F1F1" };
+    return { icon: "gradCap", bg: "#FFFFFF", color: "#FF7A1A" };
   }
-  return { icon: "folder", bg: "#252525", color: "#F1F1F1" };
+  return { icon: "folder", bg: "#FFFFFF", color: "#FF7A1A" };
 }
 
 // Format relative time like WhatsApp (e.g., 4:23 pm, Yesterday, 20 Oct)
@@ -268,7 +268,7 @@ export function LeftSidebar({
             <p>No groups match "{globalSearch}"</p>
           </div>
         ) : (
-          filteredGroups.map((group) => {
+          filteredGroups.map((group, index) => {
             const isSelected = selectedGroupId === (group.id || group._id);
             const { icon, bg, color } = getGroupVisual(group.name);
             const timeFormatted = formatWhatsAppTime(group.createdAt);
@@ -277,6 +277,7 @@ export function LeftSidebar({
               <div
                 key={group.id || group._id}
                 className={`sidebar-group-item ${isSelected ? "selected" : ""}`}
+                style={{ "--item-index": Math.min(index, 12) } as React.CSSProperties}
                 onClick={() => onSelectGroup(group.id || group._id)}
               >
                 {/* Group Avatar */}
