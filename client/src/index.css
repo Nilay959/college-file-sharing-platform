@@ -1908,6 +1908,46 @@ button {
   border-color: var(--border-focus);
 }
 
+/* Upload Modal Locked Group Destination */
+.upload-group-locked-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+  background: var(--bg-tertiary);
+}
+.locked-group-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.locked-group-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.locked-group-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(255, 122, 26, 0.12);
+  color: var(--accent-primary);
+  border: 1px solid rgba(255, 122, 26, 0.3);
+}
+
 .modal-info-note {
   display: flex;
   align-items: center;

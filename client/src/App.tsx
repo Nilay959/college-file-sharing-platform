@@ -370,9 +370,11 @@ export function AppContent() {
           onClose={() => setUploadOpen(false)}
           groups={groups}
           defaultGroupId={selectedGroupId || undefined}
+          targetGroup={currentGroup}
           onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ["group-files", selectedGroupId] });
+            queryClient.invalidateQueries({ queryKey: ["group-files"] });
             queryClient.invalidateQueries({ queryKey: ["groups"] });
+            refetchFiles();
           }}
         />
 

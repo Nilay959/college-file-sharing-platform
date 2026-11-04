@@ -194,22 +194,36 @@ export function UploadModal({
   onClose,
   groups,
   defaultGroupId,
+  targetGroup,
   onSuccess,
 }: {
   isOpen: boolean;
   onClose: () => void;
   groups: Group[];
   defaultGroupId?: string;
+  targetGroup?: Group | null;
   onSuccess: () => void;
 }) {
-  const [groupId, setGroupId] = useState(defaultGroupId || (groups[0]?.id || ""));
+  const initialGroupId = defaultGroupId || targetGroup?.id || (targetGroup as any)?._id || (groups[0]?.id || (groups[0] as any)?._id || "");
+  const [groupId, setGroupId] = useState(initialGroupId);
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (isOpen) {
+      const activeId = defaultGroupId || targetGroup?.id || (targetGroup as any)?._id || (groups[0]?.id || (groups[0] as any)?._id || "");
+      setGroupId(activeId);
+      setFile(null);
+      setError("");
+    }
+  }, [isOpen, defaultGroupId, targetGroup, groups]);
+
   if (!isOpen) return null;
+
+  const activeGroup = targetGroup || groups.find((g) => (g.id || (g as any)._id) === groupId) || null;
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -230,7 +244,8 @@ export function UploadModal({
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!groupId) {
+    const targetId = groupId || defaultGroupId || targetGroup?.id || (targetGroup as any)?._id;
+    if (!targetId) {
       setError("Please choose a target group");
       return;
     }
@@ -242,7 +257,7 @@ export function UploadModal({
     setLoading(true);
     setError("");
     try {
-      await api.uploadFile(groupId, file);
+      await api.uploadFile(targetId, file);
       setFile(null);
       onSuccess();
       onClose();
@@ -262,8 +277,8 @@ export function UploadModal({
               <Icon name="upload" size={18} />
             </div>
             <div>
-              <h3>Upload File to Group</h3>
-              <p>Share notes, documents, slides, or archives with group members</p>
+              <h3>{activeGroup ? `Upload File to ${activeGroup.name}` : "Upload File to Group"}</h3>
+              <p>{activeGroup ? `File will be uploaded directly to ${activeGroup.name}` : "Share notes, documents, slides, or archives with group members"}</p>
             </div>
           </div>
           <button className="modal-close-btn" onClick={onClose}>
@@ -274,21 +289,37 @@ export function UploadModal({
         {error && <div className="modal-error-banner">{error}</div>}
 
         <form onSubmit={handleUpload}>
-          <div className="form-group">
-            <label>Select Target Group *</label>
-            <select
-              value={groupId}
-              onChange={(e) => setGroupId(e.target.value)}
-              required
-            >
-              <option value="" disabled>Choose a group...</option>
-              {groups.map((grp) => (
-                <option key={grp.id} value={grp.id}>
-                  {grp.name} ({grp.role === "admin" ? "Admin" : "Member"})
-                </option>
-              ))}
-            </select>
-          </div>
+          {activeGroup ? (
+            <div className="form-group">
+              <label>Target Group</label>
+              <div className="upload-group-locked-display">
+                <div className="locked-group-icon">
+                  <Icon name="folder" size={16} />
+                </div>
+                <span className="locked-group-name">{activeGroup.name}</span>
+                <span className="locked-group-pill">Current Group</span>
+              </div>
+            </div>
+          ) : (
+            <div className="form-group">
+              <label>Select Target Group *</label>
+              <select
+                value={groupId}
+                onChange={(e) => setGroupId(e.target.value)}
+                required
+              >
+                <option value="" disabled>Choose a group...</option>
+                {groups.map((grp) => {
+                  const gid = grp.id || (grp as any)._id;
+                  return (
+                    <option key={gid} value={gid}>
+                      {grp.name} ({grp.role === "admin" ? "Admin" : "Member"})
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          )}
 
           <div className="form-group">
             <label>File *</label>
