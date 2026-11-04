@@ -370,12 +370,6 @@ export function GroupWorkspace({
                 ? "Try adjusting your search terms or filters."
                 : "Share lecture notes, practical files, presentations or assignments with this group."}
             </p>
-            {!searchQuery && typeFilter === "all" && (
-              <button className="toolbar-btn-upload" onClick={onUploadClick} style={{ marginTop: 12 }}>
-                <Icon name="upload" size={15} />
-                <span>Upload First File</span>
-              </button>
-            )}
           </div>
         ) : viewMode === "grid" ? (
           /* Responsive Grid View */

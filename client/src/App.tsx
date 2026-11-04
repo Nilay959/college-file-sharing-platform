@@ -138,9 +138,14 @@ export function AppContent() {
 
   // Sync selected group from URL
   useEffect(() => {
-    if (urlGroupId && urlGroupId !== selectedGroupId) {
-      setSelectedGroupId(urlGroupId);
-      setMobileView("workspace");
+    if (urlGroupId) {
+      if (urlGroupId !== selectedGroupId) {
+        setSelectedGroupId(urlGroupId);
+        setMobileView("workspace");
+      }
+    } else {
+      setSelectedGroupId(null);
+      setMobileView("sidebar");
     }
   }, [urlGroupId]);
 
@@ -150,15 +155,6 @@ export function AppContent() {
     queryFn: api.getGroups,
     enabled: isAuthenticated,
   });
-
-  // Auto-select first group if on /app without specific group
-  useEffect(() => {
-    if (isAuthenticated && currentPath === "/app" && groups.length > 0) {
-      const firstId = groups[0].id || groups[0]._id;
-      setSelectedGroupId(firstId);
-      navigate(`/app/groups/${firstId}`, true);
-    }
-  }, [isAuthenticated, currentPath, groups, navigate]);
 
   const currentGroup = useMemo(() => {
     if (!selectedGroupId) return null;
