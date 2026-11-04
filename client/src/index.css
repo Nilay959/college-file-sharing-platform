@@ -962,14 +962,23 @@ button {
 }
 .toolbar-search-box input {
   flex: 1;
+  min-width: 0;
+  width: 100%;
   background: transparent;
   border: none;
   color: var(--text-primary);
   font-size: 13px;
   outline: none;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 }
 .toolbar-search-box input::placeholder {
   color: var(--text-muted);
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: opacity 0.15s ease;
 }
 .toolbar-search-icon {
   color: var(--text-secondary);
@@ -1082,32 +1091,34 @@ button {
 .layout-panel-center.drawer-open .toolbar-search-box,
 .fileshare-workspace-panel.drawer-open .toolbar-search-box {
   order: 1;
-  min-width: 140px;
+  min-width: 150px;
   max-width: 100%;
   flex: 1 1 180px;
 }
-.layout-panel-center.drawer-open .toolbar-btn-upload,
-.fileshare-workspace-panel.drawer-open .toolbar-btn-upload {
-  order: 2;
-  margin-left: auto;
-}
 .layout-panel-center.drawer-open .toolbar-select-wrap.type-select,
 .fileshare-workspace-panel.drawer-open .toolbar-select-wrap.type-select {
-  order: 3;
-  flex: 1 1 105px;
+  order: 2;
+  flex: 0 1 115px;
   width: auto;
   min-width: 95px;
 }
 .layout-panel-center.drawer-open .toolbar-select-wrap.sort-select,
 .fileshare-workspace-panel.drawer-open .toolbar-select-wrap.sort-select {
-  order: 4;
-  flex: 1 1 115px;
+  order: 3;
+  flex: 0 1 120px;
   width: auto;
   min-width: 105px;
 }
 .layout-panel-center.drawer-open .toolbar-view-toggle,
 .fileshare-workspace-panel.drawer-open .toolbar-view-toggle {
+  order: 4;
+  flex-shrink: 0;
+}
+.layout-panel-center.drawer-open .toolbar-btn-upload,
+.fileshare-workspace-panel.drawer-open .toolbar-btn-upload {
   order: 5;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .layout-panel-center.drawer-open .workspace-files-scroll-area,
@@ -1131,28 +1142,30 @@ button {
   }
   .toolbar-search-box {
     order: 1;
-    min-width: 140px;
+    min-width: 150px;
     max-width: 100%;
     flex: 1 1 180px;
   }
-  .toolbar-btn-upload {
-    order: 2;
-    margin-left: auto;
-  }
   .toolbar-select-wrap.type-select {
-    order: 3;
-    flex: 1 1 105px;
+    order: 2;
+    flex: 0 1 115px;
     width: auto;
     min-width: 95px;
   }
   .toolbar-select-wrap.sort-select {
-    order: 4;
-    flex: 1 1 115px;
+    order: 3;
+    flex: 0 1 120px;
     width: auto;
     min-width: 105px;
   }
   .toolbar-view-toggle {
+    order: 4;
+    flex-shrink: 0;
+  }
+  .toolbar-btn-upload {
     order: 5;
+    margin-left: auto;
+    flex-shrink: 0;
   }
   .workspace-files-scroll-area {
     padding: 14px;
@@ -1160,6 +1173,14 @@ button {
   .workspace-file-grid {
     grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
     gap: 12px;
+  }
+}
+
+@container workspace (max-width: 540px) {
+  .toolbar-search-box {
+    order: 1;
+    width: 100%;
+    flex: 1 1 100%;
   }
 }
 

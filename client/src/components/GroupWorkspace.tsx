@@ -84,6 +84,32 @@ export function GroupWorkspace({
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const headerMenuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchBoxRef = useRef<HTMLDivElement>(null);
+  const [searchBoxWidth, setSearchBoxWidth] = useState<number>(300);
+
+  // Responsive search placeholder calculation based on container width & Group Info drawer state
+  useEffect(() => {
+    if (!searchBoxRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.width > 0) {
+          setSearchBoxWidth(entry.contentRect.width);
+        }
+      }
+    });
+    observer.observe(searchBoxRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const searchPlaceholder = useMemo(() => {
+    if (searchBoxWidth < 165) {
+      return "Search...";
+    }
+    if (isGroupInfoOpen || searchBoxWidth < 275) {
+      return "Search files...";
+    }
+    return "Search files in this group...";
+  }, [isGroupInfoOpen, searchBoxWidth]);
 
   // Active file card dropdown
   const [openCardMenuId, setOpenCardMenuId] = useState<string | null>(null);
@@ -270,14 +296,15 @@ export function GroupWorkspace({
           ============================================================== */}
       <div className="workspace-file-toolbar">
         {/* 1. Search Files Input (LEFTMOST, flex-grow: 1, widest) */}
-        <div className="toolbar-search-box">
+        <div ref={searchBoxRef} className="toolbar-search-box">
           <Icon name="search" size={16} className="toolbar-search-icon" />
           <input
             ref={searchInputRef}
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search files in this group..."
+            placeholder={searchPlaceholder}
+            title={searchPlaceholder}
           />
           {searchQuery && (
             <button
