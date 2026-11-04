@@ -303,7 +303,7 @@ export function AppContent() {
           </div>
 
           {/* PANEL 2: CENTER WORKSPACE (Flexible width) */}
-          <div className={`layout-panel-center ${mobileView === "sidebar" ? "mobile-hidden" : ""}`}>
+          <div className={`layout-panel-center ${isGroupInfoOpen ? "drawer-open" : ""} ${mobileView === "sidebar" ? "mobile-hidden" : ""}`}>
             <GroupWorkspace
               group={currentGroup}
               files={files}

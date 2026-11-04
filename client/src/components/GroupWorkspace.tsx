@@ -153,7 +153,7 @@ export function GroupWorkspace({
   const { icon: groupIcon, bg: groupBg, color: groupColor } = getGroupVisual(group.name);
 
   return (
-    <section className="fileshare-workspace-panel">
+    <section className={`fileshare-workspace-panel ${isGroupInfoOpen ? "drawer-open" : ""}`}>
       {/* ==============================================================
           A. COMPACT GROUP HEADER (Height: 68px, WhatsApp Web style)
           ============================================================== */}

@@ -164,6 +164,8 @@ button {
   flex-direction: column;
   overflow: hidden;
   position: relative;
+  container-type: inline-size;
+  container-name: workspace;
 }
 
 /* Panel 3: Right Sidebar / Group Info Drawer */
@@ -960,10 +962,106 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
   transition: background 0.15s ease;
 }
 .toolbar-btn-upload:hover {
   background: var(--accent-hover);
+}
+
+/* ==============================================================
+   RESPONSIVE MAIN PANEL & TOOLBAR WHEN DRAWER IS OPEN
+   ============================================================== */
+.layout-panel-center.drawer-open .workspace-file-toolbar,
+.fileshare-workspace-panel.drawer-open .workspace-file-toolbar {
+  height: auto;
+  min-height: 48px;
+  padding: 8px 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.layout-panel-center.drawer-open .toolbar-search-box,
+.fileshare-workspace-panel.drawer-open .toolbar-search-box {
+  order: 1;
+  min-width: 140px;
+  max-width: 100%;
+  flex: 1 1 180px;
+}
+.layout-panel-center.drawer-open .toolbar-btn-upload,
+.fileshare-workspace-panel.drawer-open .toolbar-btn-upload {
+  order: 2;
+  margin-left: auto;
+}
+.layout-panel-center.drawer-open .toolbar-select-wrap.type-select,
+.fileshare-workspace-panel.drawer-open .toolbar-select-wrap.type-select {
+  order: 3;
+  flex: 1 1 105px;
+  width: auto;
+  min-width: 95px;
+}
+.layout-panel-center.drawer-open .toolbar-select-wrap.sort-select,
+.fileshare-workspace-panel.drawer-open .toolbar-select-wrap.sort-select {
+  order: 4;
+  flex: 1 1 115px;
+  width: auto;
+  min-width: 105px;
+}
+.layout-panel-center.drawer-open .toolbar-view-toggle,
+.fileshare-workspace-panel.drawer-open .toolbar-view-toggle {
+  order: 5;
+}
+
+.layout-panel-center.drawer-open .workspace-files-scroll-area,
+.fileshare-workspace-panel.drawer-open .workspace-files-scroll-area {
+  padding: 14px;
+}
+.layout-panel-center.drawer-open .workspace-file-grid,
+.fileshare-workspace-panel.drawer-open .workspace-file-grid {
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+  gap: 12px;
+}
+
+/* Fluid Container Query for any constrained width */
+@container workspace (max-width: 780px) {
+  .workspace-file-toolbar {
+    height: auto;
+    min-height: 48px;
+    padding: 8px 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .toolbar-search-box {
+    order: 1;
+    min-width: 140px;
+    max-width: 100%;
+    flex: 1 1 180px;
+  }
+  .toolbar-btn-upload {
+    order: 2;
+    margin-left: auto;
+  }
+  .toolbar-select-wrap.type-select {
+    order: 3;
+    flex: 1 1 105px;
+    width: auto;
+    min-width: 95px;
+  }
+  .toolbar-select-wrap.sort-select {
+    order: 4;
+    flex: 1 1 115px;
+    width: auto;
+    min-width: 105px;
+  }
+  .toolbar-view-toggle {
+    order: 5;
+  }
+  .workspace-files-scroll-area {
+    padding: 14px;
+  }
+  .workspace-file-grid {
+    grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+    gap: 12px;
+  }
 }
 
 /* ==============================================================
@@ -2275,19 +2373,34 @@ button {
 /* ==============================================================
    6. RESPONSIVE DESIGN BREAKPOINTS
    ============================================================== */
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
   .layout-panel-left {
-    width: 290px;
-    min-width: 290px;
-    max-width: 290px;
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
+  }
+  .layout-panel-right {
+    width: 320px;
+    min-width: 300px;
+    max-width: 340px;
+  }
+}
+
+@media (max-width: 1080px) {
+  .layout-panel-left {
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
   }
   .layout-panel-right {
     position: absolute;
     right: 0;
     top: 0;
     bottom: 0;
-    width: 320px;
-    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.5);
+    width: 340px;
+    max-width: 90vw;
+    z-index: 50;
+    box-shadow: -8px 0 28px rgba(0, 0, 0, 0.65);
   }
 }
 
