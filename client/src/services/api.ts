@@ -1,4 +1,7 @@
-const API_URL = 'http://localhost:5000/api';
+// Base API URL configuration with VITE_API_URL environment variable support
+const RAW_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const CLEAN_API_URL = RAW_API_URL.replace(/\/+$/, '');
+const API_URL = CLEAN_API_URL.endsWith('/api') ? CLEAN_API_URL : `${CLEAN_API_URL}/api`;
 
 export interface User {
   id: string;
