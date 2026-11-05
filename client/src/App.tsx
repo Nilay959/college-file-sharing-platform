@@ -6,6 +6,7 @@ import { api, getAuthToken, getUserInfo, removeAuthToken, setUserInfo, User, Gro
 import { LandingPage } from "./pages/LandingPage";
 import { AuthPage } from "./pages/AuthPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { AdminPage } from "./pages/AdminPage";
 
 // Authenticated Application Components
 import { LeftSidebar } from "./components/LeftSidebar";
@@ -302,7 +303,49 @@ export function AppContent() {
     );
   }
 
-  // 3. PROTECTED ROUTES: Starts with '/app'
+  // 3. ADMIN CONSOLE ROUTE: '/admin'
+  if (normalizedPath.startsWith("/admin")) {
+    // If not authenticated, save destination and redirect to /login
+    if (!isAuthenticated) {
+      sessionStorage.setItem("redirect_after_login", currentPath);
+      navigate("/login", true);
+      return null;
+    }
+
+    // Role check: Only system-level website administrators allowed
+    if (user?.role !== "admin") {
+      return (
+        <>
+          <PageLoadingBar active={isPageLoading} />
+          <div key="admin-denied" className="page-transition-wrap not-found-page-root">
+            <div className="not-found-card">
+              <span className="not-found-code-badge">ERROR 403</span>
+              <h1 className="not-found-title">Access Denied</h1>
+              <p className="not-found-desc">
+                You do not have administrative privileges to access the FileShare System Administrator Portal.
+              </p>
+              <div className="not-found-actions">
+                <button className="primary-btn" onClick={() => navigate("/app")}>
+                  Return to Workspace
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <PageLoadingBar active={isPageLoading} />
+        <div key="admin-portal" className="page-transition-wrap">
+          <AdminPage user={user} onNavigate={navigate} />
+        </div>
+      </>
+    );
+  }
+
+  // 4. PROTECTED ROUTES: Starts with '/app'
   if (normalizedPath.startsWith("/app")) {
     // If not authenticated, save destination and redirect to /login
     if (!isAuthenticated) {
@@ -327,6 +370,7 @@ export function AppContent() {
               onOpenJoinGroup={() => setJoinGroupOpen(true)}
               onOpenSettings={() => setSettingsOpen(true)}
               onOpenNotifications={() => setNotificationsOpen(true)}
+              onOpenAdmin={() => navigate("/admin")}
               user={user}
               onLogout={handleLogout}
               onSelectFileFromGlobalSearch={(file) => {

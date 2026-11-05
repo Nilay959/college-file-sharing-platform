@@ -89,6 +89,168 @@ export interface DashboardStats {
   recentActivity: ActivityItem[];
 }
 
+export interface AdminMetrics {
+  overview: {
+    totalUsers: number;
+    activeUsersCount: number;
+    deactivatedUsersCount: number;
+    verifiedUsersCount: number;
+    adminUsersCount: number;
+    totalGroups: number;
+    totalFiles: number;
+    totalStorageBytes: number;
+    formattedTotalStorage: string;
+    avgFileSizeBytes: number;
+    formattedAvgFileSize: string;
+  };
+  engagement: {
+    dau: number;
+    wau: number;
+    mau: number;
+    engagementRatio: number;
+  };
+  storageBreakdown: {
+    category: string;
+    count: number;
+    bytes: number;
+    formattedSize: string;
+    percentage: number;
+  }[];
+  activityTrend: {
+    date: string;
+    uploadsCount: number;
+    uploadBytes: number;
+    formattedUploadBytes: string;
+    activityCount: number;
+    activeUsers: number;
+  }[];
+  recentActivities: {
+    _id: string;
+    action: string;
+    details: string;
+    createdAt: string;
+    userId?: {
+      _id: string;
+      name: string;
+      email: string;
+      avatar?: string;
+      role: string;
+    };
+    groupId?: {
+      _id: string;
+      name: string;
+      inviteCode: string;
+    };
+    fileId?: {
+      _id: string;
+      originalName: string;
+      fileSize: number;
+    };
+  }[];
+}
+
+export interface AdminUserItem {
+  id: string;
+  _id: string;
+  name: string;
+  email: string;
+  role: 'user' | 'admin';
+  avatar?: string;
+  isActive: boolean;
+  isVerified: boolean;
+  lastLogin?: string;
+  createdAt: string;
+  groupsCount: number;
+  filesCount: number;
+  storageBytes: number;
+  formattedStorage: string;
+}
+
+export interface AdminGroupItem {
+  id: string;
+  _id: string;
+  name: string;
+  description: string;
+  inviteCode: string;
+  createdAt: string;
+  createdBy?: {
+    _id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  };
+  memberCount: number;
+  fileCount: number;
+  totalBytes: number;
+  formattedStorage: string;
+}
+
+export interface AdminFileItem {
+  id: string;
+  _id: string;
+  originalName: string;
+  mimeType: string;
+  fileSize: number;
+  formattedSize: string;
+  storageKey: string;
+  fileUrl?: string;
+  createdAt: string;
+  category: string;
+  uploadedBy?: {
+    _id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  };
+  group?: {
+    _id: string;
+    name: string;
+    inviteCode: string;
+  };
+}
+
+export interface AdminStorageTelemetry {
+  totalBytes: number;
+  formattedTotalStorage: string;
+  totalFiles: number;
+  categoryBreakdown: {
+    category: string;
+    count: number;
+    bytes: number;
+    formattedSize: string;
+    percentage: number;
+  }[];
+  largestFiles: {
+    id: string;
+    name: string;
+    category: string;
+    fileSize: number;
+    formattedSize: string;
+    groupName: string;
+    uploaderName: string;
+    createdAt: string;
+  }[];
+  topGroups: {
+    id: string;
+    name: string;
+    inviteCode: string;
+    bytes: number;
+    fileCount: number;
+    formattedSize: string;
+    percentage: number;
+  }[];
+  topUsers: {
+    id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+    bytes: number;
+    fileCount: number;
+    formattedSize: string;
+    percentage: number;
+  }[];
+}
+
 export const getAuthToken = () => localStorage.getItem('token');
 export const setAuthToken = (token: string) => localStorage.setItem('token', token);
 export const removeAuthToken = () => localStorage.removeItem('token');
@@ -384,6 +546,99 @@ export const api = {
   // User Profile
   getUserProfile: async (userId: string): Promise<{ user: User; commonGroups: Group[]; files: FileItem[]; isSelf: boolean }> => {
     const res = await fetch(`${API_URL}/users/${userId}`, { headers: getHeaders() });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  // ==============================================================
+  // WEBSITE PLATFORM ADMINISTRATOR ENDPOINTS
+  // ==============================================================
+  getAdminMetrics: async (): Promise<AdminMetrics> => {
+    const res = await fetch(`${API_URL}/admin/metrics`, { headers: getHeaders() });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  getAdminUsers: async (params?: { search?: string; status?: string; role?: string }): Promise<AdminUserItem[]> => {
+    const query = new URLSearchParams();
+    if (params?.search) query.append('search', params.search);
+    if (params?.status && params.status !== 'all') query.append('status', params.status);
+    if (params?.role && params.role !== 'all') query.append('role', params.role);
+
+    const res = await fetch(`${API_URL}/admin/users?${query.toString()}`, { headers: getHeaders() });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  updateAdminUserStatus: async (userId: string, isActive: boolean): Promise<{ message: string; user: any }> => {
+    const res = await fetch(`${API_URL}/admin/users/${userId}/status`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ isActive }),
+    });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  updateAdminUserRole: async (userId: string, role: 'user' | 'admin'): Promise<{ message: string; user: any }> => {
+    const res = await fetch(`${API_URL}/admin/users/${userId}/role`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ role }),
+    });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  deleteAdminUser: async (userId: string): Promise<{ success: boolean; message: string }> => {
+    const res = await fetch(`${API_URL}/admin/users/${userId}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  getAdminGroups: async (params?: { search?: string }): Promise<AdminGroupItem[]> => {
+    const query = new URLSearchParams();
+    if (params?.search) query.append('search', params.search);
+
+    const res = await fetch(`${API_URL}/admin/groups?${query.toString()}`, { headers: getHeaders() });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  deleteAdminGroup: async (groupId: string): Promise<{ success: boolean; message: string }> => {
+    const res = await fetch(`${API_URL}/admin/groups/${groupId}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  getAdminFiles: async (params?: { search?: string; type?: string; sort?: string }): Promise<AdminFileItem[]> => {
+    const query = new URLSearchParams();
+    if (params?.search) query.append('search', params.search);
+    if (params?.type && params.type !== 'all') query.append('type', params.type);
+    if (params?.sort) query.append('sort', params.sort);
+
+    const res = await fetch(`${API_URL}/admin/files?${query.toString()}`, { headers: getHeaders() });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  deleteAdminFile: async (fileId: string): Promise<{ success: boolean; message: string }> => {
+    const res = await fetch(`${API_URL}/admin/files/${fileId}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error(await getError(res));
+    return res.json();
+  },
+
+  getAdminStorage: async (): Promise<AdminStorageTelemetry> => {
+    const res = await fetch(`${API_URL}/admin/storage`, { headers: getHeaders() });
     if (!res.ok) throw new Error(await getError(res));
     return res.json();
   },

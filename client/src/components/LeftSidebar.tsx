@@ -10,6 +10,7 @@ interface LeftSidebarProps {
   onOpenJoinGroup: () => void;
   onOpenSettings: () => void;
   onOpenNotifications: () => void;
+  onOpenAdmin?: () => void;
   user: User | null;
   onLogout: () => void;
   onSelectFileFromGlobalSearch?: (file: FileItem) => void;
@@ -59,6 +60,7 @@ export function LeftSidebar({
   onOpenJoinGroup,
   onOpenSettings,
   onOpenNotifications,
+  onOpenAdmin,
   user,
   onLogout,
   onSelectFileFromGlobalSearch,
@@ -130,6 +132,16 @@ export function LeftSidebar({
         </div>
 
         <div className="sidebar-header-actions">
+          {user?.role === "admin" && (
+            <button
+              className="header-action-btn admin-badge-btn"
+              title="Website Admin Console"
+              onClick={onOpenAdmin}
+            >
+              <Icon name="shield" size={17} />
+            </button>
+          )}
+
           <button
             className="header-action-btn"
             title="Notifications"
@@ -159,10 +171,25 @@ export function LeftSidebar({
             {userDropdownOpen && (
               <div className="sidebar-user-dropdown">
                 <div className="user-dropdown-info">
-                  <strong>{user?.name || "User"}</strong>
+                  <div className="dropdown-name-row">
+                    <strong>{user?.name || "User"}</strong>
+                    {user?.role === "admin" && <span className="admin-inline-pill">Admin</span>}
+                  </div>
                   <small>{user?.email}</small>
                 </div>
                 <div className="dropdown-divider" />
+                {user?.role === "admin" && (
+                  <button
+                    className="dropdown-item admin-highlight-item"
+                    onClick={() => {
+                      setUserDropdownOpen(false);
+                      onOpenAdmin?.();
+                    }}
+                  >
+                    <Icon name="shield" size={15} />
+                    <span>Admin Console</span>
+                  </button>
+                )}
                 <button
                   className="dropdown-item"
                   onClick={() => {
