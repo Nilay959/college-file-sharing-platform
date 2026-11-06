@@ -37,7 +37,6 @@ export function AuthPage({ onAuthSuccess, initialRoute }: AuthPageProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
-  const [devOtp, setDevOtp] = useState<string | null>(null);
 
   // Resend Countdown
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -142,7 +141,6 @@ export function AuthPage({ onAuthSuccess, initialRoute }: AuthPageProps) {
     try {
       const res = await api.login({ email: email.trim(), password });
       if (res.requiresVerification) {
-        setDevOtp(res.devOtp || null);
         setResendCooldown(60);
         setSuccessMsg(res.message || "Please verify your email address to sign in.");
         switchView("verify");
@@ -199,7 +197,6 @@ export function AuthPage({ onAuthSuccess, initialRoute }: AuthPageProps) {
         password,
       });
 
-      setDevOtp(res.devOtp || null);
       setResendCooldown(60);
       setSuccessMsg(`Verification code sent to ${email.trim()}`);
       switchView("verify");
@@ -254,7 +251,6 @@ export function AuthPage({ onAuthSuccess, initialRoute }: AuthPageProps) {
         email: email.trim(),
         purpose: view === "reset" ? "password_reset" : "registration",
       });
-      setDevOtp(res.devOtp || null);
       setResendCooldown(60);
       setSuccessMsg(`A new code was sent to ${email.trim()}`);
     } catch (err: any) {
@@ -276,8 +272,7 @@ export function AuthPage({ onAuthSuccess, initialRoute }: AuthPageProps) {
     setLoading(true);
 
     try {
-      const res = await api.forgotPassword({ email: email.trim() });
-      setDevOtp(res.devOtp || null);
+      await api.forgotPassword({ email: email.trim() });
       setResendCooldown(60);
       setSuccessMsg("If your email is registered, a password reset code was sent.");
       switchView("reset");
@@ -376,26 +371,6 @@ export function AuthPage({ onAuthSuccess, initialRoute }: AuthPageProps) {
           <div className="auth-feedback-banner success">
             <Icon name="check" size={15} />
             <span>{successMsg}</span>
-          </div>
-        )}
-
-        {/* Development Helper Badge (when mock email preview is available in non-production) */}
-        {devOtp && (
-          <div className="auth-dev-otp-pill">
-            <Icon name="code" size={14} />
-            <span>
-              Dev Verification Code: <strong>{devOtp}</strong> (Auto-detected)
-            </span>
-            <button
-              type="button"
-              className="btn-fill-dev-otp"
-              onClick={() => {
-                const digits = devOtp.split("");
-                setOtp(digits);
-              }}
-            >
-              Auto-fill
-            </button>
           </div>
         )}
 

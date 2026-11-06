@@ -2457,7 +2457,7 @@ button {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: radial-gradient(circle at top right, rgba(255, 122, 26, 0.08), transparent 40%), var(--bg-app);
+  background: #0D0D0D;
 }
 .auth-card-box {
   width: 100%;
@@ -2622,15 +2622,15 @@ button {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: radial-gradient(circle at 50% 0%, rgba(255, 122, 26, 0.08) 0%, transparent 60%), #0A0A0A;
+  background: #0D0D0D;
   overflow-y: auto;
 }
 
 .auth-portal-card {
   width: 100%;
-  max-width: 460px;
-  background: #111111;
-  border: 1px solid #292929;
+  max-width: 440px;
+  background: #141414;
+  border: 1px solid #242424;
   border-radius: 14px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
   padding: 36px 32px;
@@ -2643,11 +2643,11 @@ button {
 }
 
 .auth-brand-logo-badge {
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   border-radius: 12px;
-  background: #000000;
-  border: 1px solid #292929;
+  background: #1A1A1A;
+  border: 1px solid #2B2B2B;
   color: #FFFFFF;
   display: flex;
   align-items: center;
@@ -2659,13 +2659,13 @@ button {
 .auth-brand-title {
   font-size: 24px;
   font-weight: 700;
-  color: #F5F5F5;
+  color: #FFFFFF;
   letter-spacing: -0.4px;
 }
 
 .auth-brand-subtitle {
   font-size: 13.5px;
-  color: #A3A3A3;
+  color: #8E8E8E;
   margin-top: 6px;
   line-height: 1.5;
 }
@@ -2673,8 +2673,8 @@ button {
 /* Tabs */
 .auth-nav-tabs {
   display: flex;
-  background: #0A0A0A;
-  border: 1px solid #292929;
+  background: #0E0E0E;
+  border: 1px solid #242424;
   border-radius: 8px;
   padding: 4px;
   margin-bottom: 20px;
@@ -2692,9 +2692,9 @@ button {
 }
 
 .auth-nav-tab.active {
-  background: #181818;
-  color: #F5F5F5;
-  border: 1px solid #363636;
+  background: #202020;
+  color: #FFFFFF;
+  border: 1px solid #333333;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
@@ -2721,30 +2721,6 @@ button {
   background: rgba(34, 197, 94, 0.15);
   border: 1px solid rgba(34, 197, 94, 0.35);
   color: #4ADE80;
-}
-
-/* Dev OTP helper pill */
-.auth-dev-otp-pill {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: rgba(255, 122, 26, 0.1);
-  border: 1px dashed #FF7A1A;
-  color: #FF7A1A;
-  font-size: 12.5px;
-  margin-bottom: 16px;
-}
-
-.btn-fill-dev-otp {
-  padding: 3px 8px;
-  background: #FF7A1A;
-  color: #0A0A0A;
-  border-radius: 5px;
-  font-size: 11px;
-  font-weight: 700;
 }
 
 /* Form controls */
@@ -2795,11 +2771,11 @@ button {
 }
 .link-forgot-password {
   font-size: 12px;
-  color: #FF7A1A;
-  transition: color 0.15s;
+  color: #8E8E8E;
+  transition: color 0.15s ease;
 }
 .link-forgot-password:hover {
-  color: #FFA34E;
+  color: #FFFFFF;
   text-decoration: underline;
 }
 
@@ -2851,7 +2827,7 @@ button {
 
 .btn-auth-submit {
   width: 100%;
-  height: 42px;
+  height: 44px;
   background: #FF7A1A;
   color: #0A0A0A;
   border-radius: 8px;
@@ -2860,14 +2836,16 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s ease;
-  margin-top: 6px;
+  transition: all 0.15s ease;
+  margin-top: 8px;
+  border: none;
+  cursor: pointer;
 }
 .btn-auth-submit:hover {
   background: #E9690D;
 }
 .btn-auth-submit:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -2889,64 +2867,71 @@ button {
   margin-top: 20px;
   text-align: center;
   font-size: 13px;
-  color: #A3A3A3;
+  color: #8E8E8E;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
 }
 .link-switch-action {
-  color: #FF7A1A;
+  color: #FFFFFF;
   font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: opacity 0.15s ease;
 }
 .link-switch-action:hover {
-  text-decoration: underline;
-  color: #FFA34E;
+  opacity: 0.8;
 }
 .link-back-action {
   color: #737373;
   font-size: 12.5px;
+  transition: color 0.15s ease;
 }
 .link-back-action:hover {
-  color: #F5F5F5;
+  color: #FFFFFF;
 }
 
 /* OTP Verification UI */
 .verify-instructions-box {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 .verify-icon-wrap {
-  width: 48px;
-  height: 48px;
+  width: 50px;
+  height: 50px;
   border-radius: 12px;
-  background: rgba(255, 122, 26, 0.12);
-  color: #FF7A1A;
+  background: #1C1C1C;
+  border: 1px solid #2B2B2B;
+  color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 12px;
+  margin: 0 auto 14px;
 }
 .verify-instructions-box h3 {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
-  color: #F5F5F5;
-  margin-bottom: 6px;
+  color: #FFFFFF;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.3px;
 }
 .verify-instructions-box p {
-  font-size: 13px;
-  color: #A3A3A3;
+  font-size: 13.5px;
+  color: #8E8E8E;
   line-height: 1.5;
+  margin: 0;
 }
 .verify-instructions-box strong {
-  color: #F5F5F5;
+  color: #FFFFFF;
+  font-weight: 600;
 }
 
 .otp-inputs-grid {
   display: flex;
   gap: 10px;
   justify-content: center;
-  margin-bottom: 20px;
+  margin: 24px 0 22px;
 }
 .otp-digit-box {
   width: 48px;
@@ -2954,38 +2939,47 @@ button {
   text-align: center;
   font-size: 22px;
   font-weight: 700;
-  font-family: monospace;
-  background: #0A0A0A;
-  border: 1px solid #292929;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+  background: #121212;
+  border: 1px solid #2A2A2A;
   border-radius: 10px;
-  color: #FF7A1A;
+  color: #FFFFFF;
   outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.otp-digit-box:hover {
+  border-color: #3D3D3D;
+  background: #161616;
 }
 .otp-digit-box:focus {
-  border-color: #FF7A1A;
-  box-shadow: 0 0 0 2px rgba(255, 122, 26, 0.25);
+  border-color: #FFFFFF;
+  background: #181818;
+  box-shadow: 0 0 0 1px #FFFFFF;
 }
 
 .resend-otp-row {
   text-align: center;
-  margin-top: 14px;
+  margin-top: 16px;
 }
 .resend-countdown-text {
   font-size: 12.5px;
-  color: #A3A3A3;
+  color: #717171;
 }
 .resend-countdown-text strong {
-  color: #F5F5F5;
+  color: #CCCCCC;
 }
 .btn-resend-otp {
   font-size: 13px;
-  color: #FF7A1A;
-  font-weight: 600;
+  color: #AAAAAA;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s ease;
 }
 .btn-resend-otp:hover {
   text-decoration: underline;
-  color: #FFA34E;
+  color: #FFFFFF;
 }
 
 /* ==============================================================
